@@ -1,4 +1,5 @@
 export interface NotaFiscal {
+  id?: number;
   data_emissao: Date
   data_inicio: Date
   data_fim: Date

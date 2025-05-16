@@ -85,6 +85,11 @@ export function NotasFiscaisTableSimplificado() {
     router.push("/setup")
   }
 
+  const handleDeleteNota = async (id: number) => {
+    const client = createClient();
+    const {error} = await client.from("notas_fiscais").delete().eq("id", id)
+  }
+
   if (loading) {
     return (
       <div className="flex justify-center items-center p-8">
@@ -145,11 +150,11 @@ export function NotasFiscaisTableSimplificado() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {notas.map((nota, key) => (
-              <TableRow key={key}>
+            {notas.map((nota) => (
+              <TableRow key={nota.id}>
                 <TableCell>{formatarData(nota.data_emissao.toString())}</TableCell>
                 <TableCell className="text-right">{formatarValor(nota.valor_total)}</TableCell>
-                <TableCell className="text-right">🗑️</TableCell>
+                <TableCell className="text-right" onClick={() => handleDeleteNota(nota.id)}>🗑️</TableCell>
               </TableRow>
             ))}
           </TableBody>
