@@ -51,22 +51,6 @@ export function NotaFiscalFormSimplificado() {
   const [valorTotalCalculado, setValorTotalCalculado] = useState<number | null>(null)
   const supabase = createClient()
 
-  const handleDeleteNota = async (id: string) => {
-  const confirmDelete = confirm("Tem certeza que deseja excluir esta nota fiscal?")
-  if (!confirmDelete) return
-
-  const { error } = await supabase
-    .from("notas_fiscais")
-    .delete()
-    .eq("id", id)
-
-  if (error) {
-    console.error("Erro ao excluir nota fiscal:", error)
-    alert("Erro ao excluir nota fiscal.")
-  } else {
-    setNotas((prev) => prev.filter((nota) => nota.id !== id))
-  }
-}
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),

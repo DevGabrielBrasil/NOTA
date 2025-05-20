@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, use } from "react"
 import { createClient } from "@/lib/supabase-client"
 import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
@@ -12,76 +12,25 @@ import { Loader2, AlertTriangle, Database } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useRouter } from "next/navigation"
 import type { NotaFiscal } from "@/types/nota-fiscal"
+import { useNotas } from "@/hooks/use-notas"
 
 export function NotasFiscaisTableSimplificado() {
   const { session } = useAuth()
-  const [notas, setNotas] = useState<NotaFiscal[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [tabelaNaoExiste, setTabelaNaoExiste] = useState(false)
+  const [errorState, setError] = useState<string | null>(null)
   const [notaSelecionada, setNotaSelecionada] = useState<NotaFiscal | null>(null)
   const [mostrarResumo, setMostrarResumo] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
-  useEffect(() => {
-    const carregarNotas = async () => {
-      if (!session?.user) return
-
-      setLoading(true)
-      setError(null)
-
-      try {
-        const { data, error } = await supabase
-          .from("notas_fiscais")
-          .select("*")
-          .eq("user_id", session.user.id)
-          .order("data_emissao", { ascending: false })
-
-        if (error) {
-          if (
-            error.message.includes("does not exist") ||
-            error.message.includes("relation") ||
-            error.message.includes("não existe")
-          ) {
-            setTabelaNaoExiste(true)
-            return
-          }
-          throw error
-        }
-
-        setNotas(data || [])
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error)
-        if (
-          errorMessage.includes("does not exist") ||
-          errorMessage.includes("relation") ||
-          errorMessage.includes("não existe")
-        ) {
-          setTabelaNaoExiste(true)
-        } else {
-          setError(`Erro ao carregar notas fiscais: ${errorMessage}`)
-        }
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    carregarNotas()
-
-    const handleNotaCreated = () => carregarNotas()
-    window.addEventListener("notaFiscalCreated", handleNotaCreated)
-    return () => window.removeEventListener("notaFiscalCreated", handleNotaCreated)
-  }, [session?.user, supabase])
-
-  const handleSetupDatabase = () => router.push("/setup")
+  const { notas, error, loading, reloadNotas } = useNotas()
 
   const handleDeleteNota = async (id: number) => {
     const { error } = await supabase.from("notas_fiscais").delete().eq("id", id)
     if (error) {
       setError("Erro ao deletar a nota fiscal.")
     } else {
-      setNotas((prev) => prev.filter((nota) => nota.id !== id))
+      reloadNotas()
+      window.dispatchEvent(new Event("notaFiscalDeleted"))
     }
   }
 
@@ -96,22 +45,6 @@ export function NotasFiscaisTableSimplificado() {
         <Loader2 className="h-8 w-8 animate-spin mr-2" />
         <p>Carregando notas fiscais...</p>
       </div>
-    )
-  }
-
-  if (tabelaNaoExiste) {
-    return (
-      <Alert>
-        <AlertTriangle className="h-4 w-4" />
-        <AlertTitle>Banco de dados não configurado</AlertTitle>
-        <AlertDescription>
-          A tabela de notas fiscais não foi encontrada no banco de dados.
-          <Button onClick={handleSetupDatabase} className="mt-4">
-            <Database className="mr-2 h-4 w-4" />
-            Configurar Banco de Dados
-          </Button>
-        </AlertDescription>
-      </Alert>
     )
   }
 
@@ -183,15 +116,13 @@ export function NotasFiscaisTableSimplificado() {
               <DialogTitle>Resumo da Nota Fiscal</DialogTitle>
             </DialogHeader>
             <div className="space-y-2">
-              <p><strong>Descrição:</strong> {notaSelecionada.descricao}</p>
+
               <p><strong>Valor Total:</strong> {formatarValor(notaSelecionada.valor_total)}</p>
               <p><strong>Data de Emissão:</strong> {formatarData(notaSelecionada.data_emissao.toString())}</p>
-              <p><strong>Tomador:</strong> {notaSelecionada.tomador_nome}</p>
-              <p><strong>CNPJ/CPF:</strong> {notaSelecionada.tomador_cpf_cnpj}</p>
-              <p><strong>Serviço:</strong> {notaSelecionada.servico}</p>
+              <p><strong>CNPJ:</strong> {notaSelecionada.cnpj}</p>
 
-              <p><strong>Vale Transporte:</strong> {formatarValor(notaSelecionada.vale_transporte)}</p>
-              <p><strong>Vale Refeição:</strong> {formatarValor(notaSelecionada.vale_refeicao)}</p>
+              <p><strong>Vale Transporte:</strong> {formatarValor(notaSelecionada.valor_total_transporte)}</p>
+              <p><strong>Vale Refeição:</strong> {formatarValor(notaSelecionada.valor_total_refeicao)}</p>
               <p><strong>Salário:</strong> {formatarValor(notaSelecionada.salario)}</p>
               <p><strong>Data Início:</strong> {formatarData(notaSelecionada.data_inicio?.toString() || "")}</p>
               <p><strong>Data Fim:</strong> {formatarData(notaSelecionada.data_fim?.toString() || "")}</p>
@@ -201,4 +132,4 @@ export function NotasFiscaisTableSimplificado() {
       )}
     </>
   )
-}
+} 
