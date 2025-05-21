@@ -9,7 +9,7 @@ import type { User, Session } from "@/types/auth"
 interface AuthContextType {
   session: Session
   signIn: (email: string, password: string) => Promise<void>
-  signUp: (email: string, password: string, nome: string, empresa: string) => Promise<void>
+  signUp: (email: string, password: string, nome: string, cnpj: string) => Promise<void>
   signOut: () => Promise<void>
 }
 
@@ -24,7 +24,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isLoading: true,
     error: null,
   })
-  
+
   useEffect(() => {
     const checkSession = async () => {
       try {
@@ -37,9 +37,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (supabaseSession) {
           const { data: userData, error: userError } = await supabase
-            .from("auth.users")
+            .from("usuarios_com_auth")
             .select("*")
-            .eq("id", supabaseSession.user.id)
+            .eq("user_id", supabaseSession.user.id)
             .single()
 
           if (userError) console.error("Erro ao buscar dados do usuário:", userError)
@@ -48,8 +48,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             id: supabaseSession.user.id,
             email: supabaseSession.user.email || "",
             nome: userData?.nome || "",
-            empresa: userData?.empresa || "",
-            role: userData?.role || "user",
+            cpnj: userData?.cpnj || "", // Mantido para retrocompatibilidade com o typo
             created_at: userData?.created_at || new Date().toISOString(),
           }
 
@@ -70,29 +69,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     checkSession()
 
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && session) {
-        const { data: userData, error: userError } = await supabase
-          .from("auth.users")
-          .select("*")
-          .eq("id", session.user.id)
-          .single()
+  if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && session) {
+    const userId = session.user.id
 
-        if (userError) console.error("Erro ao buscar dados do usuário:", userError)
+    // Obter os dados do usuário com join
+    const { data: userData, error: userError } = await supabase
+    .from("usuarios_com_auth")
+    .select("*")
+      .eq("user_id", userId)
+      .single()
 
-        const user: User = {
-          id: session.user.id,
-          email: session.user.email || "",
-          nome: userData?.nome || "",
-          empresa: userData?.empresa || "",
-          role: userData?.role || "user",
-          created_at: userData?.created_at || new Date().toISOString(),
-        }
+    if (userError) console.error("Erro ao buscar dados do usuário:", userError)
 
-        setSession({ user, isLoading: false, error: null })
-      } else if (event === "SIGNED_OUT") {
-        setSession({ user: null, isLoading: false, error: null })
-      }
-    })
+    const user: User = {
+      id: session.user.id,
+      email: session.user.email || "",
+      nome: userData?.nome || "",
+      cpnj: userData?.cpnj || "",
+      created_at: userData?.created_at || new Date().toISOString(),
+    }
+
+    setSession({ user, isLoading: false, error: null })
+  }
+})
 
     return () => {
       authListener.subscription.unsubscribe()
@@ -102,7 +101,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = async (email: string, password: string) => {
     try {
       setSession((prev) => ({ ...prev, isLoading: true, error: null }))
-
       const { error } = await supabase.auth.signInWithPassword({ email, password })
 
       if (error) throw error
@@ -124,30 +122,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const signUp = async (email: string, password: string, nome: string, empresa: string) => {
+  const signUp = async (email: string, password: string, nome: string, cnpj: string) => {
     try {
       setSession((prev) => ({ ...prev, isLoading: true, error: null }))
-      const { data: authData, error: authError } = await supabase.auth.signUp({ email, password })
 
-      if (authError || !authData.user) throw new Error(authError?.message || "Erro ao criar usuário")
-
-      try {
-        await supabase.rpc("exec", { query: "SELECT 1" })
-      } catch (error) {
-        toast({
-        title: "Erro ao criar conta",
-        description: error instanceof Error ? error.message : "Verifique suas credenciais e tente novamente",
-        variant: "destructive",
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            cnpj,
+          },
+        },
       })
-        return
+
+      if (authError || !authData.user) {
+        throw new Error(authError?.message || "Erro ao criar usuário")
       }
 
-      toast({ title: "Registro realizado com sucesso!", description: "Sua conta foi criada. Você já pode acessar o sistema." })
-      router.push("/dashboard")
+      // Se a confirmação de e-mail estiver habilitada, o usuário não estará logado aqui
+      await supabase.auth.signOut()
+
+      toast({
+        title: "Verifique seu e-mail",
+        description: "Enviamos um link de confirmação. Confirme para ativar sua conta.",
+      })
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : JSON.stringify(error)
       setSession((prev) => ({ ...prev, isLoading: false, error: errorMessage }))
-      toast({ title: "Erro ao criar conta", description: errorMessage, variant: "destructive" })
+      toast({
+        title: "Erro ao criar conta",
+        description: errorMessage,
+        variant: "destructive",
+      })
     } finally {
       setSession((prev) => ({ ...prev, isLoading: false }))
     }

@@ -19,11 +19,10 @@ import { isCNPJ} from "validation-br"
 const formSchema = z
   .object({
     nome: z.string().min(3, "O nome deve ter pelo menos 3 caracteres"),
-    empresa: z.string().min(2, "O nome da empresa deve ter pelo menos 2 caracteres"),
     email: z.string().email("Email inválido"),
     password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
     confirmPassword: z.string().min(6, "A confirmação de senha deve ter pelo menos 6 caracteres"),
-    cpnj: z.string().min(14).max(14).refine((data) => isCNPJ(data))
+    cnpj: z.string().min(14).max(14).refine((data) => isCNPJ(data))
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "As senhas não coincidem",
@@ -46,8 +45,8 @@ export default function RegistroPage() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       nome: "",
-      empresa: "",
       email: "",
+      cnpj: "",
       password: "",
       confirmPassword: "",
     },
@@ -56,7 +55,7 @@ export default function RegistroPage() {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsLoading(true)
     try {
-      await signUp(values.email, values.password, values.nome, values.empresa)
+      await signUp(values.email, values.password, values.nome, values.cnpj)
     } catch (error) {
       console.error("Erro no componente de registro:", error)
       // O erro já será tratado no contexto de autenticação
@@ -123,12 +122,12 @@ export default function RegistroPage() {
                 />
                 <FormField
                   control={form.control}
-                  name="empresa"
+                  name="cnpj"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Empresa</FormLabel>
+                      <FormLabel>CNPJ</FormLabel>
                       <FormControl>
-                        <Input placeholder="Nome da sua empresa" {...field} />
+                        <Input placeholder="Digite seu CNPJ" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -191,12 +190,6 @@ export default function RegistroPage() {
               Já tem uma conta?{" "}
               <Link href="/login" className="text-blue-600 hover:underline">
                 Faça login
-              </Link>
-            </p>
-            <p className="text-sm text-gray-600">
-              Problemas com o registro?{" "}
-              <Link href="/setup" className="text-blue-600 hover:underline">
-                Configure o banco de dados
               </Link>
             </p>
           </CardFooter>

@@ -2,8 +2,7 @@ export type User = {
   id: string
   email: string
   nome?: string
-  empresa?: string
-  role: "admin" | "user"
+  cpnj?: string
   created_at: string
 }
 

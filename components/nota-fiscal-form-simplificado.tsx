@@ -22,7 +22,6 @@ const formSchema = z.object({
   valorRefeicao: z.coerce.number().min(0, "O valor da refeição não pode ser negativo"),
   valorTransporte: z.coerce.number().min(0, "O valor do transporte não pode ser negativo"),
   valorDas: z.coerce.number().min(0, "O valor do DAS não pode ser negativo"),
-  cnpj: z.string().optional(),
   periodo: z
     .object({
       from: z.date().optional(),
@@ -59,7 +58,6 @@ export function NotaFiscalFormSimplificado() {
       valorRefeicao: 0,
       valorTransporte: 0,
       valorDas: 0,
-      cnpj: "",
       periodo: {
         from: undefined,
         to: undefined,
@@ -165,7 +163,6 @@ export function NotaFiscalFormSimplificado() {
       valor_total_refeicao: valorTotalRefeicao,
       valor_total_transporte: valorTotalTransporte,
       valor_total: valorTotal,
-      cnpj: values.cnpj,
     }
 
     const { error, data } = await supabase.from("notas_fiscais").insert({
@@ -188,7 +185,6 @@ export function NotaFiscalFormSimplificado() {
       valorRefeicao: 0,
       valorTransporte: 0,
       valorDas: 0,
-      cnpj: "",
       periodo: { from: undefined, to: undefined },
     })
     setDiasUteis(null)
@@ -311,20 +307,6 @@ export function NotaFiscalFormSimplificado() {
               )}
             />
           </div>
-
-          <FormField
-            control={form.control}
-            name="cnpj"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>CNPJ (opcional)</FormLabel>
-                <FormControl>
-                  <Input placeholder="00.000.000/0000-00" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
         </div>
 
         <Card className="bg-muted">
