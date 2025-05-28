@@ -1,9 +1,9 @@
-import { createClient as supabaseCreateClient } from "@supabase/supabase-js"
+import { createBrowserClient as supabaseCreateClient } from "@supabase/ssr"
 import type { Database } from "@/types/supabase"
 
-let supabaseClient: ReturnType<typeof supabaseCreateClient<Database>> | null = null
+let supabaseClient: ReturnType<typeof supabaseCreateClient<Database>>;
 
-export function createClient() {
+function createClient() {
   if (supabaseClient) return supabaseClient
 
   const supabaseUrl = process.env.SUPABASE_URL
@@ -13,6 +13,9 @@ export function createClient() {
     throw new Error("Variáveis de ambiente SUPABASE_URL e SUPABASE_ANON_KEY são necessárias")
   }
 
-  supabaseClient = supabaseCreateClient<Database>(supabaseUrl, supabaseKey) as ReturnType<typeof supabaseCreateClient<Database>>
-  return supabaseClient
+  return supabaseCreateClient<Database>(supabaseUrl, supabaseKey) as ReturnType<typeof supabaseCreateClient<Database>>
+
 }
+supabaseClient = createClient()
+
+export { supabaseClient }

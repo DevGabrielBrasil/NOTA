@@ -1,7 +1,7 @@
 "use client"
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
-import { createClient } from "@/lib/supabase-client"
+import { supabaseClient } from "@/lib/supabase-client"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 import type { User, Session } from "@/types/auth"
@@ -16,7 +16,6 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const supabase = createClient()
   const router = useRouter()
   const { toast } = useToast()
   const [session, setSession] = useState<Session>({
@@ -31,13 +30,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const {
           data: { session: supabaseSession },
           error,
-        } = await supabase.auth.getSession()
+        } = await supabaseClient.auth.getSession()
 
         if (error) throw error
 
         if (supabaseSession) {
-          const { data: userData, error: userError } = await supabase
-            .from("usuarios_com_auth")
+          const { data: userData, error: userError } = await supabaseClient
+            .from("usuarios")
             .select("*")
             .eq("user_id", supabaseSession.user.id)
             .single()
@@ -68,13 +67,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     checkSession()
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: authListener } = supabaseClient.auth.onAuthStateChange(async (event, session) => {
   if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && session) {
     const userId = session.user.id
 
     // Obter os dados do usuário com join
-    const { data: userData, error: userError } = await supabase
-    .from("usuarios_com_auth")
+    const { data: userData, error: userError } = await supabaseClient
+    .from("usuarios")
     .select("*")
       .eq("user_id", userId)
       .single()
@@ -101,7 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signIn = async (email: string, password: string) => {
     try {
       setSession((prev) => ({ ...prev, isLoading: true, error: null }))
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
+      const { error } = await supabaseClient.auth.signInWithPassword({ email, password })
 
       if (error) throw error
 
@@ -126,7 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setSession((prev) => ({ ...prev, isLoading: true, error: null }))
 
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      const { data: authData, error: authError } = await supabaseClient.auth.signUp({
         email,
         password,
         options: {
@@ -141,7 +140,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       // Se a confirmação de e-mail estiver habilitada, o usuário não estará logado aqui
-      await supabase.auth.signOut()
+      await supabaseClient.auth.signOut()
 
       toast({
         title: "Verifique seu e-mail",
@@ -162,7 +161,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     try {
-      await supabase.auth.signOut()
+      await supabaseClient.auth.signOut()
       router.push("/login")
       toast({ title: "Logout realizado", description: "Você saiu do sistema com sucesso." })
     } catch (error) {

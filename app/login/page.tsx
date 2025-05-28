@@ -1,18 +1,31 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import Link from "next/link"
 import { Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { useAuth } from "@/contexts/auth-context"
 import { useRouter } from "next/navigation"
-import { useEffect } from "react"
 
 const formSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -24,7 +37,6 @@ export default function LoginPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
 
-  // Redirecionar se já estiver logado
   useEffect(() => {
     if (session.user && !session.isLoading) {
       router.push("/dashboard")
@@ -57,17 +69,21 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
+    <div className="flex min-h-screen flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-background text-foreground">
       <div className="w-full max-w-md">
         <div className="text-center mb-6">
           <h1 className="text-3xl font-bold">Sistema de Gestão MEI</h1>
-          <p className="text-gray-600 mt-2">Gerencie suas notas fiscais com facilidade</p>
+          <p className="text-muted-foreground mt-2">
+            Gerencie suas notas fiscais com facilidade
+          </p>
         </div>
 
         <Card>
           <CardHeader>
             <CardTitle>Login</CardTitle>
-            <CardDescription>Entre com suas credenciais para acessar o sistema</CardDescription>
+            <CardDescription>
+              Entre com suas credenciais para acessar o sistema
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <Form {...form}>
@@ -112,9 +128,9 @@ export default function LoginPage() {
             </Form>
           </CardContent>
           <CardFooter className="flex justify-center">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground">
               Não tem uma conta?{" "}
-              <Link href="/registro" className="text-blue-600 hover:underline">
+              <Link href="/registro" className="text-primary hover:underline">
                 Registre-se
               </Link>
             </p>

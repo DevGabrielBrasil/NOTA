@@ -1,5 +1,5 @@
 import { useAuth } from "@/contexts/auth-context"
-import { createClient } from "@/lib/supabase-client"
+import { supabaseClient } from "@/lib/supabase-client"
 import { NotaFiscal } from "@/types/nota-fiscal"
 import { useCallback, useEffect, useState } from "react"
 
@@ -8,18 +8,17 @@ export function useNotas() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const { session } = useAuth()
-  const supabase = createClient()
 
   const fetchNotas = useCallback(async () => {
     setLoading(true)
     try {
       if (!session?.user) return
 
-      const { data, error: supaError } = await supabase
+      const { data, error: supaError } = await supabaseClient
         .from("notas_fiscais")
         .select("*")
         .eq("user_id", session.user.id)
-        .order("data_emissao", { ascending: false })
+        .order("data_emissao", { ascending: true })
 
       if (supaError) throw supaError
 

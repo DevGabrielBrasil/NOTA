@@ -14,7 +14,7 @@ import { calcularDiasUteis } from "@/actions/feriados-actions"
 import { Card, CardContent } from "@/components/ui/card"
 import type { NotaFiscal } from "@/types/nota-fiscal"
 import type { DateRange } from "react-day-picker"
-import { createClient } from "@/lib/supabase-client"
+import { supabaseClient } from "@/lib/supabase-client"
 import { useAuth } from "@/contexts/auth-context"
 
 const formSchema = z.object({
@@ -48,7 +48,6 @@ export function NotaFiscalFormSimplificado() {
   const [isCalculando, setIsCalculando] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [valorTotalCalculado, setValorTotalCalculado] = useState<number | null>(null)
-  const supabase = createClient()
 
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -135,7 +134,7 @@ export function NotaFiscalFormSimplificado() {
     }
 
     // Verificação opcional de duplicidade
-    const { data: existentes } = await supabase
+    const { data: existentes } = await supabaseClient
       .from("notas_fiscais")
       .select("*")
       .eq("user_id", session.user.id)
@@ -165,8 +164,9 @@ export function NotaFiscalFormSimplificado() {
       valor_total: valorTotal,
     }
 
-    const { error, data } = await supabase.from("notas_fiscais").insert({
+    const { error, data } = await supabaseClient.from("notas_fiscais").insert({
       ...notaFiscal,
+      cnpj: session.user.cpnj,
       user_id: session.user.id,
     })
 

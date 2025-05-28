@@ -1,18 +1,19 @@
 "use client"
 
 import { useState, useEffect, use } from "react"
-import { createClient } from "@/lib/supabase-client"
+import { supabaseClient } from "@/lib/supabase-client"
 import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { formatarData, formatarValor } from "@/utils/formatters"
-import { Loader2, AlertTriangle, Database } from "lucide-react"
+import { Loader2, AlertTriangle, Database, DownloadIcon, TrashIcon, NotepadText } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useRouter } from "next/navigation"
 import type { NotaFiscal } from "@/types/nota-fiscal"
 import { useNotas } from "@/hooks/use-notas"
+import { baixarResumoPdf } from "@/lib/baixarResumoPdf"
 
 export function NotasFiscaisTableSimplificado() {
   const { session } = useAuth()
@@ -20,12 +21,11 @@ export function NotasFiscaisTableSimplificado() {
   const [notaSelecionada, setNotaSelecionada] = useState<NotaFiscal | null>(null)
   const [mostrarResumo, setMostrarResumo] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
 
   const { notas, error, loading, reloadNotas } = useNotas()
 
   const handleDeleteNota = async (id: number) => {
-    const { error } = await supabase.from("notas_fiscais").delete().eq("id", id)
+    const { error } = await supabaseClient.from("notas_fiscais").delete().eq("id", id)
     if (error) {
       setError("Erro ao deletar a nota fiscal.")
     } else {
@@ -86,21 +86,30 @@ export function NotasFiscaisTableSimplificado() {
                 <TableRow key={nota.id}>
                   <TableCell>{formatarData(nota.data_emissao.toString())}</TableCell>
                   <TableCell className="text-right">{formatarValor(nota.valor_total)}</TableCell>
-                  <TableCell className="text-right space-x-2">
-                    <span
-                      className="cursor-pointer text-blue-600"
-                      onClick={() => abrirResumo(nota)}
-                      title="Ver detalhes"
-                    >
-                      🗒️
-                    </span>
-                    <span
-                      className="cursor-pointer text-red-600"
-                      onClick={() => handleDeleteNota(nota.id!)}
-                      title="Excluir nota"
-                    >
-                      🗑️
-                    </span>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end items-center space-x-2">
+                      <button
+                        className="cursor-pointer text-blue-600 hover:text-blue-800 p-1"
+                        onClick={() => abrirResumo(nota)}
+                        title="Ver detalhes"
+                      >
+                        <span className="text-lg"><NotepadText/></span>
+                      </button>
+                      <button
+                        className="cursor-pointer text-blue-600 hover:text-blue-800 p-1"
+                        onClick={() => handleDeleteNota(nota.id!)}
+                        title="Excluir nota"
+                      >
+                        <TrashIcon className="w-5 h-5" />
+                      </button>
+                      <button
+                        className="cursor-pointer text-blue-600 hover:text-blue-800 p-1"
+                        onClick={() => baixarResumoPdf(nota)}
+                        title="Baixar nota"
+                      >
+                        <DownloadIcon className="w-5 h-5" />
+                      </button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -108,6 +117,7 @@ export function NotasFiscaisTableSimplificado() {
           </Table>
         </div>
       </div>
+
 
       {notaSelecionada && (
         <Dialog open={mostrarResumo} onOpenChange={setMostrarResumo}>

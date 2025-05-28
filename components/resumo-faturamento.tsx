@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Loader2, AlertTriangle, Database } from "lucide-react"
-import { createClient } from "@/lib/supabase-client"
+import { supabaseClient } from "@/lib/supabase-client"
 import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -20,7 +20,6 @@ export function ResumoFaturamento() {
   const [valorRestante, setValorRestante] = useState<number>(0)
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
-  const supabase = createClient()
 
   const calcularFaturamento = async () => {
     try {
@@ -38,7 +37,7 @@ export function ResumoFaturamento() {
       const fimAno = `${anoAtual}-12-31`
 
       // Buscar notas fiscais do ano atual
-      const { data, error } = await supabase
+      const { data, error } = await supabaseClient
         .from("notas_fiscais")
         .select("valor_total")
         .eq("user_id", session.user.id)
