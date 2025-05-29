@@ -153,17 +153,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const signOut = async () => {
-    try {
-      await supabaseClient.auth.signOut()
-      router.push("/login")
-      toast.success("Logout realizado",{ description: "Você saiu do sistema com sucesso." })
-    } catch (error) {
-      toast.error("Erro ao fazer logout",{
-        description: error instanceof Error ? error.message : "Erro desconhecido",
-      })
-    }
+ const signOut = async () => {
+  try {
+    await supabaseClient.auth.signOut()
+    setSession({ user: null, isLoading: false, error: null }) // <- ESSENCIAL
+    router.push("/login")
+    toast.success("Logout realizado", {
+      description: "Você saiu do sistema com sucesso.",
+    })
+  } catch (error) {
+    toast.error("Erro ao fazer logout", {
+      description: error instanceof Error ? error.message : "Erro desconhecido",
+    })
   }
+}
+
 
   return <AuthContext.Provider value={{ session, signIn, signUp, signOut }}>{children}</AuthContext.Provider>
 }
