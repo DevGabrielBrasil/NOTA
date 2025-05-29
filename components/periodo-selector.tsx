@@ -9,7 +9,7 @@ import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 import type { DateRange } from "react-day-picker"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 
 interface PeriodoSelectorProps {
   value?: DateRange
@@ -18,7 +18,6 @@ interface PeriodoSelectorProps {
 }
 
 export function PeriodoSelector({ value, onChange, defaultMonth }: PeriodoSelectorProps) {
-  const { toast } = useToast()
 
   const hoje = new Date()
   const [visibleMonth, setVisibleMonth] = useState<Date>(defaultMonth || hoje)
@@ -45,10 +44,8 @@ export function PeriodoSelector({ value, onChange, defaultMonth }: PeriodoSelect
       onChange(date)
       setIsOpen(false)
     } else {
-      toast({
-        title: "Seleção incompleta",
+      toast.warning("Seleção incompleta", {
         description: "Por favor, selecione um intervalo de datas (início e fim).",
-        variant: "destructive",
       })
     }
   }

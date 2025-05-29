@@ -8,7 +8,7 @@ import { Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 import { PeriodoSelector } from "@/components/periodo-selector"
 import { calcularDiasUteis } from "@/actions/feriados-actions"
 import { Card, CardContent } from "@/components/ui/card"
@@ -42,7 +42,6 @@ const formSchema = z.object({
 })
 
 export function NotaFiscalFormSimplificado() {
-  const { toast } = useToast()
   const { session } = useAuth()
   const [diasUteis, setDiasUteis] = useState<number | null>(null)
   const [isCalculando, setIsCalculando] = useState(false)
@@ -92,10 +91,8 @@ export function NotaFiscalFormSimplificado() {
           setDiasUteis(dias)
         } catch (error) {
           console.error("Erro ao calcular dias úteis:", error)
-          toast({
-            title: "Erro ao calcular dias úteis",
+          toast.error("Erro ao calcular dias úteis",{
             description: "Não foi possível calcular os dias úteis. Tente novamente.",
-            variant: "destructive",
           })
           setDiasUteis(null)
         } finally {
@@ -115,10 +112,8 @@ export function NotaFiscalFormSimplificado() {
   console.log(values)
 
   if (!values.periodo?.from || !values.periodo?.to || !diasUteis) {
-    toast({
-      title: "Erro ao criar nota fiscal",
+    toast.error("Erro ao criar nota fiscal",{
       description: "Selecione um período válido.",
-      variant: "destructive",
     })
     return
   }
@@ -142,10 +137,8 @@ export function NotaFiscalFormSimplificado() {
       .eq("data_fim", values.periodo.to)
 
     if (existentes && existentes.length > 0) {
-      toast({
-        title: "Nota fiscal já existe",
+      toast.error("Nota fiscal já existe",{
         description: "Você já criou uma nota para este período.",
-        variant: "destructive",
       })
       return
     }
@@ -172,8 +165,7 @@ export function NotaFiscalFormSimplificado() {
 
     if (error) throw error
 
-    toast({
-      title: "Nota fiscal criada com sucesso!",
+    toast.success("Nota fiscal criada com sucesso!",{
       description: `Valor total: ${new Intl.NumberFormat("pt-BR", {
         style: "currency",
         currency: "BRL",
@@ -198,16 +190,10 @@ export function NotaFiscalFormSimplificado() {
       errorMessage.includes("relation") ||
       errorMessage.includes("não existe")
     ) {
-      toast({
-        title: "Configuração necessária",
-        description: "A tabela de notas fiscais não existe. Configure o banco de dados primeiro.",
-        variant: "destructive",
-      })
+      
     } else {
-      toast({
-        title: "Erro ao criar nota fiscal",
+      toast.error("Erro ao criar nota fiscal",{
         description: errorMessage,
-        variant: "destructive",
       })
     }
   } finally {

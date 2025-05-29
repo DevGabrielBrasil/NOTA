@@ -118,7 +118,6 @@ export function NotasFiscaisTableSimplificado() {
         </div>
       </div>
 
-
       {notaSelecionada && (
         <Dialog open={mostrarResumo} onOpenChange={setMostrarResumo}>
           <DialogContent>
@@ -130,7 +129,6 @@ export function NotasFiscaisTableSimplificado() {
               <p><strong>Valor Total:</strong> {formatarValor(notaSelecionada.valor_total)}</p>
               <p><strong>Data de Emissão:</strong> {formatarData(notaSelecionada.data_emissao.toString())}</p>
               <p><strong>CNPJ:</strong> {notaSelecionada.cnpj}</p>
-
               <p><strong>Vale Transporte:</strong> {formatarValor(notaSelecionada.valor_total_transporte)}</p>
               <p><strong>Vale Refeição:</strong> {formatarValor(notaSelecionada.valor_total_refeicao)}</p>
               <p><strong>Salário:</strong> {formatarValor(notaSelecionada.salario)}</p>

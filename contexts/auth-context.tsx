@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
 import { supabaseClient } from "@/lib/supabase-client"
 import { useRouter } from "next/navigation"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 import type { User, Session } from "@/types/auth"
 
 interface AuthContextType {
@@ -17,7 +17,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter()
-  const { toast } = useToast()
   const [session, setSession] = useState<Session>({
     user: null,
     isLoading: true,
@@ -104,7 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (error) throw error
 
-      toast({ title: "Login realizado com sucesso!", description: "Bem-vindo de volta ao sistema." })
+      toast.success("Login realizado com sucesso!", { description: "Bem-vindo de volta ao sistema." })
       router.push("/dashboard")
     } catch (error) {
       console.error("Erro ao fazer login:", error)
@@ -113,10 +112,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isLoading: false,
         error: error instanceof Error ? error.message : "Erro ao fazer login",
       }))
-      toast({
-        title: "Erro ao fazer login",
+      toast("Erro ao fazer login",{
         description: error instanceof Error ? error.message : "Verifique suas credenciais e tente novamente",
-        variant: "destructive",
       })
     }
   }
@@ -142,17 +139,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Se a confirmação de e-mail estiver habilitada, o usuário não estará logado aqui
       await supabaseClient.auth.signOut()
 
-      toast({
-        title: "Verifique seu e-mail",
+      toast.info("Verifique seu e-mail",{
         description: "Enviamos um link de confirmação. Confirme para ativar sua conta.",
       })
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : JSON.stringify(error)
       setSession((prev) => ({ ...prev, isLoading: false, error: errorMessage }))
-      toast({
-        title: "Erro ao criar conta",
+      toast.error("Erro ao criar conta",{
         description: errorMessage,
-        variant: "destructive",
       })
     } finally {
       setSession((prev) => ({ ...prev, isLoading: false }))
@@ -163,12 +157,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await supabaseClient.auth.signOut()
       router.push("/login")
-      toast({ title: "Logout realizado", description: "Você saiu do sistema com sucesso." })
+      toast.success("Logout realizado",{ description: "Você saiu do sistema com sucesso." })
     } catch (error) {
-      toast({
-        title: "Erro ao fazer logout",
+      toast.error("Erro ao fazer logout",{
         description: error instanceof Error ? error.message : "Erro desconhecido",
-        variant: "destructive",
       })
     }
   }

@@ -21,7 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { editarNotaFiscal, getNotaFiscalById } from "@/actions/nota-fiscal-actions"
 import { calcularDiasUteis } from "@/actions/feriados-actions"
@@ -53,7 +53,6 @@ interface EditarNotaModalProps {
 
 export function EditarNotaModal({ notaId, isOpen, onClose }: EditarNotaModalProps) {
   const { refreshData } = useAppContext()
-  const { toast } = useToast()
   const [diasUteis, setDiasUteis] = useState<number | null>(null)
   const [isCalculando, setIsCalculando] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -105,10 +104,8 @@ export function EditarNotaModal({ notaId, isOpen, onClose }: EditarNotaModalProp
           }
         } catch (error) {
           console.error("Erro ao carregar nota fiscal:", error)
-          toast({
-            title: "Erro ao carregar nota fiscal",
+          toast.error("Erro ao carregar nota fiscal",{
             description: "Não foi possível carregar os dados da nota fiscal. Tente novamente.",
-            variant: "destructive",
           })
           onClose()
         } finally {
@@ -142,10 +139,8 @@ export function EditarNotaModal({ notaId, isOpen, onClose }: EditarNotaModalProp
           setDiasUteis(dias)
         } catch (error) {
           console.error("Erro ao calcular dias úteis:", error)
-          toast({
-            title: "Erro ao calcular dias úteis",
+          toast.error("Erro ao calcular dias úteis",{
             description: "Não foi possível calcular os dias úteis. Tente novamente.",
-            variant: "destructive",
           })
         } finally {
           setIsCalculando(false)
@@ -160,10 +155,8 @@ export function EditarNotaModal({ notaId, isOpen, onClose }: EditarNotaModalProp
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!notaId || !diasUteis) {
-      toast({
-        title: "Erro ao editar nota fiscal",
+      toast.error("Erro ao editar nota fiscal",{
         description: "Dados incompletos. Tente novamente.",
-        variant: "destructive",
       })
       return
     }
@@ -182,8 +175,7 @@ export function EditarNotaModal({ notaId, isOpen, onClose }: EditarNotaModalProp
         valorTotal,
       })
 
-      toast({
-        title: "Nota fiscal atualizada com sucesso!",
+      toast.success("Nota fiscal atualizada com sucesso!",{
         description: `Valor total: ${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(valorTotal)}`,
       })
 
@@ -191,13 +183,11 @@ export function EditarNotaModal({ notaId, isOpen, onClose }: EditarNotaModalProp
       onClose() // Fecha o modal
     } catch (error) {
       console.error("Erro ao editar nota fiscal:", error)
-      toast({
-        title: "Erro ao editar nota fiscal",
+      toast.error("Erro ao editar nota fiscal",{
         description:
           typeof error === "object" && error !== null && "message" in error
             ? String(error.message)
             : "Não foi possível editar a nota fiscal. Tente novamente.",
-        variant: "destructive",
       })
     } finally {
       setIsSubmitting(false)
