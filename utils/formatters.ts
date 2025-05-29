@@ -1,12 +1,15 @@
 // Função para formatar data
 export function formatarData(dataString: string): string {
-  try {
-    const data = new Date(dataString)
-    return data.toLocaleDateString("pt-BR")
-  } catch (error) {
-    console.error("Erro ao formatar data:", error)
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dataString)) {
+    console.error("Formato de data inválido. Esperado: YYYY-MM-DD")
     return dataString
   }
+
+  // Divide a string em partes
+  const partes = dataString.split('-')
+  
+  // Reorganiza as partes para o formato brasileiro
+  return `${partes[2]}/${partes[1]}/${partes[0]}`
 }
 
 // Função para formatar valor monetário

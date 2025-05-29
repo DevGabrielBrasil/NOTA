@@ -18,10 +18,10 @@ export function useNotas() {
         .from("notas_fiscais")
         .select("*")
         .eq("user_id", session.user.id)
-        .order("data_emissao", { ascending: true })
+        .order("data_emissao", { ascending: false })
 
       if (supaError) throw supaError
-
+ 
       setNotas(data as NotaFiscal[] ?? [])
       setError(null)
     } catch (error) {

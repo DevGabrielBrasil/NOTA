@@ -1,26 +1,21 @@
 "use client"
 
-import { useState, useEffect, use } from "react"
-import { supabaseClient } from "@/lib/supabase-client"
-import { useAuth } from "@/contexts/auth-context"
-import { Button } from "@/components/ui/button"
+import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { formatarData, formatarValor } from "@/utils/formatters"
-import { Loader2, AlertTriangle, Database, DownloadIcon, TrashIcon, NotepadText } from "lucide-react"
+import { Loader2, AlertTriangle, DownloadIcon, TrashIcon, NotepadText } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { useRouter } from "next/navigation"
 import type { NotaFiscal } from "@/types/nota-fiscal"
 import { useNotas } from "@/hooks/use-notas"
 import { baixarResumoPdf } from "@/lib/baixarResumoPdf"
+import { supabaseClient } from "@/lib/supabase-client"
 
 export function NotasFiscaisTableSimplificado() {
-  const { session } = useAuth()
   const [errorState, setError] = useState<string | null>(null)
   const [notaSelecionada, setNotaSelecionada] = useState<NotaFiscal | null>(null)
   const [mostrarResumo, setMostrarResumo] = useState(false)
-  const router = useRouter()
 
   const { notas, error, loading, reloadNotas } = useNotas()
 

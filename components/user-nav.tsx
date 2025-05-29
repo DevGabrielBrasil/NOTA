@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useAuth } from "@/contexts/auth-context"
-import { LogOut, Settings, User } from "lucide-react"
+import { LogOut, Settings, User, ScrollTextIcon } from "lucide-react"
 
 export function UserNav() {
   const { session, signOut } = useAuth()
@@ -65,6 +65,10 @@ export function UserNav() {
           <DropdownMenuItem onClick={() => window.location.href = "/configuracoes"}>
             <Settings className="mr-2 h-4 w-4" />
             <span>Configurações</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => window.location.href = "/dashboard/certidoes"}>
+            <ScrollTextIcon className="mr-2 h-4 w-4" />
+            <span>Certidoes</span>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />

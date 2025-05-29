@@ -144,7 +144,7 @@ export function NotaFiscalFormSimplificado() {
     }
 
     const notaFiscal: NotaFiscal = {
-      data_emissao: new Date(),
+      data_emissao: new Date(Date.now()),
       data_inicio: values.periodo.from,
       data_fim: values.periodo.to,
       salario: values.salario,
