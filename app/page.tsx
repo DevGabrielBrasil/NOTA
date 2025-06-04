@@ -1,126 +1,73 @@
 "use client"
 
-import { useState } from "react"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
-import { z } from "zod"
-import Link from "next/link"
-import { Loader2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { useAuth } from "@/contexts/auth-context"
 import { useRouter } from "next/navigation"
-import { useEffect } from "react"
+import { Button } from "@/components/ui/button"
 
-const formSchema = z.object({
-  email: z.string().email("Email inválido"),
-  password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
-})
-
-export default function LoginPage() {
-  const { signIn, session } = useAuth()
+export default function LandingPage() {
   const router = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
-
-  // Redirecionar se já estiver logado
-  useEffect(() => {
-    if (session.user && !session.isLoading) {
-      router.push("/dashboard")
-    }
-  }, [session, router])
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
-  })
-
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    setIsLoading(true)
-    try {
-      await signIn(values.email, values.password)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  if (session.isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    )
-  }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold">Sistema de Gestão MEI</h1>
-          <p className="text-gray-600 mt-2">Gerencie suas notas fiscais com facilidade</p>
+    <div className="min-h-screen bg-white text-gray-800 flex flex-col">
+      {/* HEADER */}
+      <header className="w-full flex justify-between items-center px-6 py-4 shadow-md">
+        <h1 className="text-xl font-bold text-indigo-600">MEI+</h1>
+        <div className="flex gap-4">
+          <Button variant="ghost" onClick={() => router.push("/login")}>
+            Entrar
+          </Button>
+          <Button className="bg-indigo-600 text-white hover:bg-indigo-700" onClick={() => router.push("/registro")}>
+            Criar Conta
+          </Button>
         </div>
+      </header>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Login</CardTitle>
-            <CardDescription>Entre com suas credenciais para acessar o sistema</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input placeholder="seu@email.com" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Senha</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder="******" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Entrando...
-                    </>
-                  ) : (
-                    "Entrar"
-                  )}
-                </Button>
-              </form>
-            </Form>
-          </CardContent>
-          <CardFooter className="flex justify-center">
-            <p className="text-sm text-gray-600">
-              Não tem uma conta?{" "}
-              <Link href="/registro" className="text-blue-600 hover:underline">
-                Registre-se
-              </Link>
-            </p>
-          </CardFooter>
-        </Card>
-      </div>
+      {/* CONTEÚDO PRINCIPAL */}
+      <main className="flex flex-col items-center justify-center px-4 py-16 flex-1">
+        <section className="text-center max-w-4xl mb-12">
+          <h2 className="text-5xl font-extrabold text-indigo-600 mb-4">Seu sistema completo de gestão MEI</h2>
+          <p className="text-lg text-gray-600 mb-8">
+            Controle seu faturamento, simule notas fiscais e receba alertas de vencimento de certidões. Tudo 100% online e gratuito.
+          </p>
+        </section>
+
+        {/* INFORMAÇÕES */}
+        <section className="bg-gray-100 rounded-lg p-6 shadow-md w-full max-w-4xl mb-10 text-left">
+          <h3 className="text-2xl font-bold mb-4">📊 Números que impressionam</h3>
+          <ul className="space-y-2 text-gray-700">
+            <li>✅ Mais de <strong>15 milhões de MEIs</strong> no Brasil</li>
+            <li>💸 Gasto médio com contabilidade: <strong>R$ 1.200 a R$ 2.400 por ano</strong></li>
+            <li>📈 Com o MEI+ você economiza e <strong>mantém tudo sob controle</strong></li>
+          </ul>
+        </section>
+
+        {/* FUNCIONALIDADES */}
+        <section className="w-full max-w-4xl">
+          <h3 className="text-2xl font-bold mb-6 text-center">⚙️ Funcionalidades do MEI+</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-gray-700">
+            <Feature title="💰 Cálculo de Faturamento Total">
+              Veja quanto você já faturou no ano e mantenha-se dentro do limite legal.
+            </Feature>
+            <Feature title="📄 Simulador de Notas Fiscais">
+              Gere notas simuladas com facilidade e controle seus serviços prestados.
+            </Feature>
+            <Feature title="⏰ Alertas de Certidões">
+              Receba notificações quando uma certidão estiver prestes a vencer.
+            </Feature>
+            <Feature title="☁️ Armazenamento Seguro">
+              Todos os seus dados ficam salvos na nuvem com segurança e confiabilidade.
+            </Feature>
+          </div>
+        </section>
+      </main>
+    </div>
+  )
+}
+
+function Feature({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="bg-white p-4 rounded-lg shadow hover:shadow-md transition duration-200 border border-gray-200">
+      <h4 className="text-lg font-semibold mb-2">{title}</h4>
+      <p className="text-sm text-gray-600">{children}</p>
     </div>
   )
 }

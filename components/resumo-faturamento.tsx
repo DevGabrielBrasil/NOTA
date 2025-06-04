@@ -199,7 +199,7 @@ calcularFaturamento()
                   ? "⚠️ Atenção: Você já utilizou mais de 70% do limite de faturamento."
                   : "✅ Você está dentro do limite seguro de faturamento."}
             </p>
-          </div>
+          </div> 
         </div>
       </CardContent>
     </Card>

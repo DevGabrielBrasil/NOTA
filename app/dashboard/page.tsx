@@ -44,8 +44,14 @@ export default function DashboardPage() {
           </div>
 
           {/* Tabs de Navegação */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-4">
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="w-full"
+            aria-label="Navegação principal do painel"
+          >
+            {/* Corrigido para 2 colunas, pois só há 2 abas */}
+            <TabsList className="grid w-full grid-cols-2 mb-4">
               <TabsTrigger value="nova-nota">Nova Nota Fiscal</TabsTrigger>
               <TabsTrigger value="historico">Histórico de Notas</TabsTrigger>
             </TabsList>
