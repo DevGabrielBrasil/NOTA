@@ -57,3 +57,38 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Restaura a estilização para o calendário (react-day-picker) */
+
+/* Define a cor principal para os elementos selecionados */
+.rdp {
+  --rdp-accent-color: hsl(222.2 47.4% 11.2%); /* Cor escura do tema */
+  --rdp-background-color: hsl(222.2 84% 4.9%); /* Cor de fundo do tema */
+}
+
+/* Estilo para o dia que está selecionado (fundo e texto) */
+.rdp-day_selected,
+.rdp-day_selected:focus-visible,
+.rdp-day_selected:hover {
+  background-color: var(--rdp-accent-color) !important;
+  color: hsl(210 40% 98%) !important; /* Cor do texto claro */
+}
+
+/* Estilo para o início do intervalo de datas */
+.rdp-day_range_start {
+  border-top-left-radius: 50%;
+  border-bottom-left-radius: 50%;
+}
+
+/* Estilo para o fim do intervalo de datas */
+.rdp-day_range_end {
+  border-top-right-radius: 50%;
+  border-bottom-right-radius: 50%;
+}
+
+/* Estilo para os dias no meio do intervalo */
+.rdp-day_range_middle {
+  background-color: var(--rdp-accent-color) !important;
+  color: hsl(210 40% 98%) !important;
+  border-radius: 0 !important;
+}
