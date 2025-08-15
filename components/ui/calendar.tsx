@@ -42,11 +42,13 @@ function Calendar({
           "h-9 w-9 p-0 font-normal aria-selected:opacity-100"
         ),
         day_range_end: "day-range-end",
+        // --- AQUI ESTÁ A ALTERAÇÃO DE COR ---
         day_selected:
-          "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+          "bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:bg-blue-500",
+        // ------------------------------------
         day_today: "bg-accent text-accent-foreground",
         day_outside:
-          "day-outside text-muted-foreground aria-selected:bg-accent/50 aria-selected:text-muted-foreground",
+          "day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground",
         day_disabled: "text-muted-foreground opacity-50",
         day_range_middle:
           "aria-selected:bg-accent aria-selected:text-accent-foreground",
@@ -54,12 +56,8 @@ function Calendar({
         ...classNames,
       }}
       components={{
-        IconLeft: ({ className, ...props }) => (
-          <ChevronLeft className={cn("h-4 w-4", className)} {...props} />
-        ),
-        IconRight: ({ className, ...props }) => (
-          <ChevronRight className={cn("h-4 w-4", className)} {...props} />
-        ),
+        IconLeft: ({ ...props }) => <ChevronLeft className="h-4 w-4" />,
+        IconRight: ({ ...props }) => <ChevronRight className="h-4 w-4" />,
       }}
       {...props}
     />

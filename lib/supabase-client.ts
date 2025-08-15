@@ -1,21 +1,17 @@
-import { createBrowserClient as supabaseCreateClient } from "@supabase/ssr"
-import type { Database } from "@/types/supabase"
+// lib/supabase-client.ts
+import { createClient } from '@supabase/supabase-js'
 
-let supabaseClient: ReturnType<typeof supabaseCreateClient<Database>>;
+// 1. Procura as variáveis de ambiente com o prefixo OBRIGATÓRIO.
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-function createClient() {
-  if (supabaseClient) return supabaseClient
-
-  const supabaseUrl = process.env.SUPABASE_URL
-  const supabaseKey = process.env.SUPABASE_ANON_KEY
-
-  if (!supabaseUrl || !supabaseKey) {
-    throw new Error("Variáveis de ambiente SUPABASE_URL e SUPABASE_ANON_KEY são necessárias")
-  }
-
-  return supabaseCreateClient<Database>(supabaseUrl, supabaseKey) as ReturnType<typeof supabaseCreateClient<Database>>
-
+// 2. Lança um erro claro se as variáveis não forem encontradas.
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error("Erro de configuração: As variáveis NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY não foram encontradas. Verifique o seu ficheiro .env.local")
 }
-supabaseClient = createClient()
 
-export { supabaseClient }
+console.log("SUPABASE_URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
+console.log("SUPABASE_ANON_KEY:", process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+
+// 3. Exporta o cliente Supabase pronto para ser usado.
+export const supabaseClient = createClient(supabaseUrl, supabaseAnonKey)

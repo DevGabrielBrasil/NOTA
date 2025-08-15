@@ -1,37 +1,25 @@
-import type React from "react"
-import { Inter } from "next/font/google"
-import "./globals.css"
-import { ThemeProvider } from "@/components/theme-provider"
-import { AppProvider } from "@/contexts/app-context"
-import { AuthProvider } from "@/contexts/auth-context"
-import { Toaster } from "@/components/ui/sonner"
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+import { Providers } from "./providers";
 
-const inter = Inter({ subsets: ["latin"] })
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "Sistema de Gestão de Notas Fiscais - MEI",
-  description: "Sistema para gerenciamento de notas fiscais para Microempreendedor Individual",
-    generator: 'v0.dev'
-}
+  title: "NotaDev",
+  description: "Sistema de gestão de notas",
+};
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode
+  children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" suppressHydrationWarning>
+    <html lang="pt-BR">
       <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-          <AuthProvider>
-            <AppProvider>
-              {children}
-              <Toaster/>
-            </AppProvider>
-          </AuthProvider>
-        </ThemeProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
-  )
+  );
 }
-

@@ -1,15 +1,39 @@
 "use client"
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
-import { supabaseClient } from "@/lib/supabase-client"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import type { User, Session } from "@/types/auth"
+import { supabaseClient } from "@/lib/supabase-client"
+import type { User } from "@supabase/supabase-js"
+
+// Definimos um tipo mais específico para os metadados do usuário
+interface UserMetadata {
+  nome?: string;
+  cnpj?: string;
+}
+
+// Estendemos o tipo User para incluir nossos metadados
+interface CustomUser extends User {
+  user_metadata: UserMetadata;
+}
+
+interface Session {
+  user: CustomUser | null;
+  isLoading: boolean;
+}
+
+// Atualizamos a interface para o signUp para incluir o CNPJ
+interface SignUpData {
+  email: string;
+  password: string;
+  nome: string;
+  cnpj: string;
+}
 
 interface AuthContextType {
   session: Session
   signIn: (email: string, password: string) => Promise<void>
-  signUp: (email: string, password: string, nome: string, cnpj: string) => Promise<void>
+  signUp: (dados: SignUpData) => Promise<void>
   signOut: () => Promise<void>
 }
 
@@ -17,79 +41,18 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter()
-  const [session, setSession] = useState<Session>({
-    user: null,
-    isLoading: true,
-    error: null,
-  })
+  const [session, setSession] = useState<Session>({ user: null, isLoading: true })
 
   useEffect(() => {
-    const checkSession = async () => {
-      try {
-        const {
-          data: { session: supabaseSession },
-          error,
-        } = await supabaseClient.auth.getSession()
-
-        if (error) throw error
-
-        if (supabaseSession) {
-          const { data: userData, error: userError } = await supabaseClient
-            .from("usuarios")
-            .select("*")
-            .eq("user_id", supabaseSession.user.id)
-            .single()
-
-          if (userError) console.error("Erro ao buscar dados do usuário:", userError)
-
-          const user: User = {
-            id: supabaseSession.user.id,
-            email: supabaseSession.user.email || "",
-            nome: userData?.nome || "",
-            cpnj: userData?.cpnj || "", // Mantido para retrocompatibilidade com o typo
-            created_at: userData?.created_at || new Date().toISOString(),
-          }
-
-          setSession({ user, isLoading: false, error: null })
-        } else {
-          setSession({ user: null, isLoading: false, error: null })
-        }
-      } catch (error) {
-        console.error("Erro ao verificar sessão:", error)
-        setSession({
-          user: null,
-          isLoading: false,
-          error: error instanceof Error ? error.message : "Erro desconhecido",
-        })
-      }
+    const getSession = async () => {
+      const { data: { session } } = await supabaseClient.auth.getSession()
+      setSession({ user: (session?.user as CustomUser) ?? null, isLoading: false })
     }
+    getSession()
 
-    checkSession()
-
-    const { data: authListener } = supabaseClient.auth.onAuthStateChange(async (event, session) => {
-  if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && session) {
-    const userId = session.user.id
-
-    // Obter os dados do usuário com join
-    const { data: userData, error: userError } = await supabaseClient
-    .from("usuarios")
-    .select("*")
-      .eq("user_id", userId)
-      .single()
-
-    if (userError) console.error("Erro ao buscar dados do usuário:", userError)
-
-    const user: User = {
-      id: session.user.id,
-      email: session.user.email || "",
-      nome: userData?.nome || "",
-      cpnj: userData?.cpnj || "",
-      created_at: userData?.created_at || new Date().toISOString(),
-    }
-
-    setSession({ user, isLoading: false, error: null })
-  }
-})
+    const { data: authListener } = supabaseClient.auth.onAuthStateChange((_event, session) => {
+      setSession({ user: (session?.user as CustomUser) ?? null, isLoading: false })
+    })
 
     return () => {
       authListener.subscription.unsubscribe()
@@ -97,77 +60,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const signIn = async (email: string, password: string) => {
-    try {
-      setSession((prev) => ({ ...prev, isLoading: true, error: null }))
-      const { error } = await supabaseClient.auth.signInWithPassword({ email, password })
-
-      if (error) throw error
-
-      toast.success("Login realizado com sucesso!", { description: "Bem-vindo de volta ao sistema." })
+    const { error } = await supabaseClient.auth.signInWithPassword({ email, password })
+    if (error) {
+      toast.error("Erro no login", { description: "Email ou palavra-passe inválidos." })
+    } else {
       router.push("/dashboard")
-    } catch (error) {
-      console.error("Erro ao fazer login:", error)
-      setSession((prev) => ({
-        ...prev,
-        isLoading: false,
-        error: error instanceof Error ? error.message : "Erro ao fazer login",
-      }))
-      toast("Erro ao fazer login",{
-        description: error instanceof Error ? error.message : "Verifique suas credenciais e tente novamente",
-      })
     }
   }
-
-  const signUp = async (email: string, password: string, nome: string, cnpj: string) => {
-    try {
-      setSession((prev) => ({ ...prev, isLoading: true, error: null }))
-
-      const { data: authData, error: authError } = await supabaseClient.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            cnpj,
-          },
-        },
-      })
-
-      if (authError || !authData.user) {
-        throw new Error(authError?.message || "Erro ao criar usuário")
+  
+  // ATUALIZADO: Função signUp agora salva o CNPJ nos metadados
+  const signUp = async (dados: SignUpData) => {
+    const { error } = await supabaseClient.auth.signUp({
+      email: dados.email,
+      password: dados.password,
+      options: { 
+        data: { 
+          nome: dados.nome,
+          cnpj: dados.cnpj // Adicionamos o CNPJ aqui
+        } 
       }
-
-      // Se a confirmação de e-mail estiver habilitada, o usuário não estará logado aqui
-      await supabaseClient.auth.signOut()
-
-      toast.info("Verifique seu e-mail",{
-        description: "Enviamos um link de confirmação. Confirme para ativar sua conta.",
-      })
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : JSON.stringify(error)
-      setSession((prev) => ({ ...prev, isLoading: false, error: errorMessage }))
-      toast.error("Erro ao criar conta",{
-        description: errorMessage,
-      })
-    } finally {
-      setSession((prev) => ({ ...prev, isLoading: false }))
+    })
+    if (error) {
+      toast.error("Erro ao criar conta", { description: error.message })
+    } else {
+      toast.info("Verifique o seu e-mail para confirmar a conta.")
+      router.push("/login")
     }
   }
 
- const signOut = async () => {
-  try {
+  const signOut = async () => {
     await supabaseClient.auth.signOut()
-    setSession({ user: null, isLoading: false, error: null }) // <- ESSENCIAL
     router.push("/login")
-    toast.success("Logout realizado", {
-      description: "Você saiu do sistema com sucesso.",
-    })
-  } catch (error) {
-    toast.error("Erro ao fazer logout", {
-      description: error instanceof Error ? error.message : "Erro desconhecido",
-    })
   }
-}
-
 
   return <AuthContext.Provider value={{ session, signIn, signUp, signOut }}>{children}</AuthContext.Provider>
 }
