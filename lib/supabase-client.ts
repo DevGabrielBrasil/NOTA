@@ -10,8 +10,5 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error("Erro de configuração: As variáveis NEXT_PUBLIC_SUPABASE_URL e NEXT_PUBLIC_SUPABASE_ANON_KEY não foram encontradas. Verifique o seu ficheiro .env.local")
 }
 
-console.log("SUPABASE_URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
-console.log("SUPABASE_ANON_KEY:", process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-
 // 3. Exporta o cliente Supabase pronto para ser usado.
 export const supabaseClient = createClient(supabaseUrl, supabaseAnonKey)

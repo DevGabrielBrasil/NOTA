@@ -79,7 +79,9 @@ export function ResumoFaturamento() {
       setIsLoading(false)
     }
   }
-calcularFaturamento()
+  useEffect(() => {
+    calcularFaturamento()
+  })
   // Atualizar quando uma nota for criada ou excluída
   useEffect(() => {
     const handleNotaChanged = () => {

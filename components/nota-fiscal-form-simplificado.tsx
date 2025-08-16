@@ -52,10 +52,10 @@ export function NotaFiscalFormSimplificado() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      salario: 0,
-      valorRefeicao: 0,
-      valorTransporte: 0,
-      valorDas: 0,
+      salario: undefined,
+      valorRefeicao: undefined,
+      valorTransporte: undefined,
+      valorDas: undefined,
       periodo: {
         from: undefined,
         to: undefined,
@@ -109,8 +109,6 @@ export function NotaFiscalFormSimplificado() {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
   if (isSubmitting) return // <-- Proteção contra duplo clique
 
-  console.log(values)
-
   if (!values.periodo?.from || !values.periodo?.to || !diasUteis) {
     toast.error("Erro ao criar nota fiscal",{
       description: "Selecione um período válido.",
@@ -159,7 +157,6 @@ export function NotaFiscalFormSimplificado() {
 
     const { error, data } = await supabaseClient.from("notas_fiscais").insert({
       ...notaFiscal,
-      cnpj: session.user.cpnj,
       user_id: session.user.id,
     })
 
@@ -210,6 +207,10 @@ export function NotaFiscalFormSimplificado() {
     }
     form.setValue("periodo", safeRange, { shouldValidate: true })
   }
+
+  const salarioFormatado = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
+    Number(salario ?? 0) + Number(valorDas ?? 0)
+  )
 
   return (
     <Form {...form}>
@@ -313,9 +314,7 @@ export function NotaFiscalFormSimplificado() {
               <div>
                 <h3 className="font-medium text-sm">Salário + DAS:</h3>
                 <p className="text-xl font-bold">
-                  {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
-                    Number(salario) + Number(valorDas),
-                  )}
+                  {salarioFormatado === "R$ NaN" ? 0 : salarioFormatado}
                 </p>
               </div>
               <div>

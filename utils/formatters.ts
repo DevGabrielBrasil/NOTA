@@ -24,3 +24,14 @@ export function formatarValor(valor: number): string {
     return `R$ ${valor}`
   }
 }
+
+export function cnpjMask (value: string) {
+  if (!value) return "";
+  return value
+    .replace(/\D/g, "") // Remove tudo o que não é dígito
+    .replace(/(\d{2})(\d)/, "$1.$2") // Coloca ponto após o segundo dígito
+    .replace(/(\d{3})(\d)/, "$1.$2") // Coloca ponto após o quinto dígito
+    .replace(/(\d{3})(\d)/, "$1/$2") // Coloca barra após o oitavo dígito
+    .replace(/(\d{4})(\d)/, "$1-$2") // Coloca hífen após o décimo segundo dígito
+    .replace(/(-\d{2})\d+?$/, "$1"); // Limita a dois dígitos após o hífen
+};

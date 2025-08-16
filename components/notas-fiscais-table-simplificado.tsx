@@ -1,23 +1,31 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { formatarData, formatarValor } from "@/utils/formatters"
+import { cnpjMask, formatarData, formatarValor } from "@/utils/formatters"
 import { Loader2, AlertTriangle, DownloadIcon, TrashIcon, NotepadText } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import type { NotaFiscal } from "@/types/nota-fiscal"
 import { useNotas } from "@/hooks/use-notas"
 import { baixarResumoPdf } from "@/lib/baixarResumoPdf"
 import { supabaseClient } from "@/lib/supabase-client"
+import { useAuth } from "@/contexts/auth-context"
 
 export function NotasFiscaisTableSimplificado() {
+  const { session } = useAuth()
   const [errorState, setError] = useState<string | null>(null)
   const [notaSelecionada, setNotaSelecionada] = useState<NotaFiscal | null>(null)
   const [mostrarResumo, setMostrarResumo] = useState(false)
-
+  const [cnpj, setCnpj] = useState("")
   const { notas, error, loading, reloadNotas } = useNotas()
+
+   useEffect(() => {
+      if (session.user) {
+        setCnpj(session.user.user_metadata?.cnpj || "")
+      }
+    }, [session.user])
 
   const handleDeleteNota = async (id: number) => {
     const { error } = await supabaseClient.from("notas_fiscais").delete().eq("id", id)
@@ -123,7 +131,7 @@ export function NotasFiscaisTableSimplificado() {
 
               <p><strong>Valor Total:</strong> {formatarValor(notaSelecionada.valor_total)}</p>
               <p><strong>Data de Emissão:</strong> {formatarData(notaSelecionada.data_emissao.toString())}</p>
-              <p><strong>CNPJ:</strong> {notaSelecionada.cnpj}</p>
+              <p><strong>CNPJ:</strong> {cnpjMask(cnpj)}</p>
               <p><strong>Vale Transporte:</strong> {formatarValor(notaSelecionada.valor_total_transporte)}</p>
               <p><strong>Vale Refeição:</strong> {formatarValor(notaSelecionada.valor_total_refeicao)}</p>
               <p><strong>Salário:</strong> {formatarValor(notaSelecionada.salario)}</p>

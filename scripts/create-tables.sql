@@ -22,7 +22,6 @@ CREATE TABLE IF NOT EXISTS notas_fiscais (
   valor_total_refeicao NUMERIC NOT NULL,
   valor_total_transporte NUMERIC NOT NULL,
   valor_total NUMERIC NOT NULL,
-  cnpj TEXT,
   migrado_de_local BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
