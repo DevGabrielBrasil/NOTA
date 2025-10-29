@@ -326,18 +326,7 @@ Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para ma
 **Gabriel Brasil**
 - GitHub: [@DevGabrielBrasil](https://github.com/DevGabrielBrasil)
 - LinkedIn: [Gabriel Brasil](https://linkedin.com/in/gabriel-brasil)
-- Email: contato@gabrielbrasil.dev
-
----
-
-## 🙏 Agradecimentos
-
-- [Next.js](https://nextjs.org/) pela excelente framework
-- [Shadcn/ui](https://ui.shadcn.com/) pelos componentes lindos
-- [BrasilAPI](https://brasilapi.com.br/) pela API de CNPJ gratuita
-- [Vercel](https://vercel.com/) pela plataforma de deploy
-- Comunidade open source pelo suporte
-
+- Email: gabriel.f.wlt@gmail.com
 ---
 
 <div align="center">
