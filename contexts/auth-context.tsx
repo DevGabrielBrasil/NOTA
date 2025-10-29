@@ -3,8 +3,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { supabaseClient } from "@/lib/supabase-client"
-import type { User } from "@supabase/supabase-js"
+import { useSession, signIn as nextAuthSignIn, signOut as nextAuthSignOut } from "next-auth/react"
 
 // Definimos um tipo mais específico para os metadados do usuário
 interface UserMetadata {
@@ -13,7 +12,11 @@ interface UserMetadata {
 }
 
 // Estendemos o tipo User para incluir nossos metadados
-interface CustomUser extends User {
+interface CustomUser {
+  id: string;
+  email: string;
+  name: string;
+  cnpj: string;
   user_metadata: UserMetadata;
 }
 
@@ -41,55 +44,69 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter()
+  const { data: sessionData, status } = useSession()
   const [session, setSession] = useState<Session>({ user: null, isLoading: true })
 
   useEffect(() => {
-    const getSession = async () => {
-      const { data: { session } } = await supabaseClient.auth.getSession()
-      setSession({ user: (session?.user as CustomUser) ?? null, isLoading: false })
+    if (status === 'loading') {
+      setSession({ user: null, isLoading: true })
+    } else if (status === 'authenticated' && sessionData?.user) {
+      const user: CustomUser = {
+        id: (sessionData.user as any).id || sessionData.user.email!, // Fallback para email se não tiver ID
+        email: sessionData.user.email!,
+        name: sessionData.user.name!,
+        cnpj: (sessionData.user as any).cnpj || '',
+        user_metadata: {
+          nome: sessionData.user.name!,
+          cnpj: (sessionData.user as any).cnpj || ''
+        }
+      }
+      setSession({ user, isLoading: false })
+    } else {
+      setSession({ user: null, isLoading: false })
     }
-    getSession()
-
-    const { data: authListener } = supabaseClient.auth.onAuthStateChange((_event, session) => {
-      setSession({ user: (session?.user as CustomUser) ?? null, isLoading: false })
-    })
-
-    return () => {
-      authListener.subscription.unsubscribe()
-    }
-  }, [])
+  }, [sessionData, status])
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabaseClient.auth.signInWithPassword({ email, password })
-    if (error) {
+    const result = await nextAuthSignIn('credentials', {
+      email,
+      password,
+      redirect: false
+    })
+
+    if (result?.error) {
       toast.error("Erro no login", { description: "Email ou palavra-passe inválidos." })
     } else {
       router.push("/dashboard")
     }
   }
   
-  // ATUALIZADO: Função signUp agora salva o CNPJ nos metadados
+  // ATUALIZADO: Função signUp agora usa nossa API local
   const signUp = async (dados: SignUpData) => {
-    const { error } = await supabaseClient.auth.signUp({
-      email: dados.email,
-      password: dados.password,
-      options: { 
-        data: { 
-          nome: dados.nome,
-          cnpj: dados.cnpj // Adicionamos o CNPJ aqui
-        } 
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(dados),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        toast.error("Erro ao criar conta", { description: data.error })
+      } else {
+        toast.success("Conta criada com sucesso! Faça login para continuar.")
+        router.push("/login")
       }
-    })
-    if (error) {
-      toast.error("Erro ao criar conta", { description: error.message })
-    } else {
-      toast.info("Verifique o seu e-mail para confirmar a conta.")
-      router.push("/login")
+    } catch (error) {
+      toast.error("Erro ao criar conta", { description: "Erro de conexão" })
     }
   }
 
   const signOut = async () => {
-    await supabaseClient.auth.signOut()
+    await nextAuthSignOut({ redirect: false })
     router.push("/login")
   }
 

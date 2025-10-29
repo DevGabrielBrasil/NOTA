@@ -10,7 +10,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import type { NotaFiscal } from "@/types/nota-fiscal"
 import { useNotas } from "@/hooks/use-notas"
 import { baixarResumoPdf } from "@/lib/baixarResumoPdf"
-import { supabaseClient } from "@/lib/supabase-client"
+
 import { useAuth } from "@/contexts/auth-context"
 
 export function NotasFiscaisTableSimplificado() {
@@ -28,12 +28,19 @@ export function NotasFiscaisTableSimplificado() {
     }, [session.user])
 
   const handleDeleteNota = async (id: number) => {
-    const { error } = await supabaseClient.from("notas_fiscais").delete().eq("id", id)
-    if (error) {
-      setError("Erro ao deletar a nota fiscal.")
-    } else {
+    try {
+      const response = await fetch(`/api/notas/${id}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        throw new Error('Erro ao deletar nota fiscal')
+      }
+
       reloadNotas()
       window.dispatchEvent(new Event("notaFiscalDeleted"))
+    } catch (error) {
+      setError("Erro ao deletar a nota fiscal.")
     }
   }
 

@@ -1,5 +1,4 @@
 import { useAuth } from "@/contexts/auth-context"
-import { supabaseClient } from "@/lib/supabase-client"
 import { NotaFiscal } from "@/types/nota-fiscal"
 import { useCallback, useEffect, useState } from "react"
 
@@ -14,15 +13,14 @@ export function useNotas() {
     try {
       if (!session?.user) return
 
-      const { data, error: supaError } = await supabaseClient
-        .from("notas_fiscais")
-        .select("*")
-        .eq("user_id", session.user.id)
-        .order("data_emissao", { ascending: false })
+      const response = await fetch('/api/notas')
+      const data = await response.json()
 
-      if (supaError) throw supaError
+      if (!response.ok) {
+        throw new Error(data.error || 'Erro ao carregar notas')
+      }
  
-      setNotas(data as NotaFiscal[] ?? [])
+      setNotas(data.data ?? [])
       setError(null)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)

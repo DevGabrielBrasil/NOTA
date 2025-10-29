@@ -14,7 +14,7 @@ import { calcularDiasUteis } from "@/actions/feriados-actions"
 import { Card, CardContent } from "@/components/ui/card"
 import type { NotaFiscal } from "@/types/nota-fiscal"
 import type { DateRange } from "react-day-picker"
-import { supabaseClient } from "@/lib/supabase-client"
+
 import { useAuth } from "@/contexts/auth-context"
 
 const formSchema = z.object({
@@ -52,10 +52,10 @@ export function NotaFiscalFormSimplificado() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      salario: undefined,
-      valorRefeicao: undefined,
-      valorTransporte: undefined,
-      valorDas: undefined,
+      salario: 0,
+      valorRefeicao: 0,
+      valorTransporte: 0,
+      valorDas: 0,
       periodo: {
         from: undefined,
         to: undefined,
@@ -72,9 +72,14 @@ export function NotaFiscalFormSimplificado() {
   // Atualizar o valor total calculado sempre que os valores mudarem
   useEffect(() => {
     if (diasUteis !== null) {
-      const valorTotalRefeicao = diasUteis * valorRefeicao
-      const valorTotalTransporte = diasUteis * valorTransporte
-      const total = Number(salario) + valorTotalRefeicao + valorTotalTransporte + Number(valorDas)
+      const salarioNum = Number(salario) || 0
+      const valorRefeicaoNum = Number(valorRefeicao) || 0
+      const valorTransporteNum = Number(valorTransporte) || 0
+      const valorDasNum = Number(valorDas) || 0
+      
+      const valorTotalRefeicao = diasUteis * valorRefeicaoNum
+      const valorTotalTransporte = diasUteis * valorTransporteNum
+      const total = salarioNum + valorTotalRefeicao + valorTotalTransporte + valorDasNum
       setValorTotalCalculado(total)
     } else {
       setValorTotalCalculado(null)
@@ -126,25 +131,10 @@ export function NotaFiscalFormSimplificado() {
       throw new Error("Usuário não autenticado")
     }
 
-    // Verificação opcional de duplicidade
-    const { data: existentes } = await supabaseClient
-      .from("notas_fiscais")
-      .select("*")
-      .eq("user_id", session.user.id)
-      .eq("data_inicio", values.periodo.from)
-      .eq("data_fim", values.periodo.to)
-
-    if (existentes && existentes.length > 0) {
-      toast.error("Nota fiscal já existe",{
-        description: "Você já criou uma nota para este período.",
-      })
-      return
-    }
-
-    const notaFiscal: NotaFiscal = {
-      data_emissao: new Date(Date.now()),
-      data_inicio: values.periodo.from,
-      data_fim: values.periodo.to,
+    const notaFiscal = {
+      data_emissao: new Date().toISOString().split('T')[0],
+      data_inicio: values.periodo.from.toISOString().split('T')[0],
+      data_fim: values.periodo.to.toISOString().split('T')[0],
       salario: values.salario,
       valor_refeicao: values.valorRefeicao,
       valor_transporte: values.valorTransporte,
@@ -153,14 +143,22 @@ export function NotaFiscalFormSimplificado() {
       valor_total_refeicao: valorTotalRefeicao,
       valor_total_transporte: valorTotalTransporte,
       valor_total: valorTotal,
+      cnpj: session.user.cnpj
     }
 
-    const { error, data } = await supabaseClient.from("notas_fiscais").insert({
-      ...notaFiscal,
-      user_id: session.user.id,
+    const response = await fetch('/api/notas', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(notaFiscal),
     })
 
-    if (error) throw error
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(data.error || 'Erro ao criar nota fiscal')
+    }
 
     toast.success("Nota fiscal criada com sucesso!",{
       description: `Valor total: ${new Intl.NumberFormat("pt-BR", {
@@ -168,6 +166,9 @@ export function NotaFiscalFormSimplificado() {
         currency: "BRL",
       }).format(valorTotal)}`,
     })
+
+    // Disparar evento para recarregar a lista de notas
+    window.dispatchEvent(new Event("notaFiscalCreated"))
 
     form.reset({
       salario: 0,
@@ -209,7 +210,7 @@ export function NotaFiscalFormSimplificado() {
   }
 
   const salarioFormatado = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
-    Number(salario ?? 0) + Number(valorDas ?? 0)
+    (Number(salario) || 0) + (Number(valorDas) || 0)
   )
 
   return (
@@ -245,7 +246,7 @@ export function NotaFiscalFormSimplificado() {
                 <FormItem>
                   <FormLabel>Salário (R$)</FormLabel>
                   <FormControl>
-                    <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                    <Input type="number" step="any" placeholder="0" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -258,7 +259,7 @@ export function NotaFiscalFormSimplificado() {
                 <FormItem>
                   <FormLabel>Valor DAS (R$)</FormLabel>
                   <FormControl>
-                    <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                    <Input type="number" step="any" placeholder="0" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -274,7 +275,7 @@ export function NotaFiscalFormSimplificado() {
                 <FormItem>
                   <FormLabel>Valor Refeição (R$)</FormLabel>
                   <FormControl>
-                    <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                    <Input type="number" step="any" placeholder="0" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -287,7 +288,7 @@ export function NotaFiscalFormSimplificado() {
                 <FormItem>
                   <FormLabel>Valor Transporte (R$)</FormLabel>
                   <FormControl>
-                    <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                    <Input type="number" step="any" placeholder="0" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -314,27 +315,27 @@ export function NotaFiscalFormSimplificado() {
               <div>
                 <h3 className="font-medium text-sm">Salário + DAS:</h3>
                 <p className="text-xl font-bold">
-                  {salarioFormatado === "R$ NaN" ? 0 : salarioFormatado}
+                  {salarioFormatado}
                 </p>
               </div>
               <div>
                 <h3 className="font-medium text-sm">Total Refeição:</h3>
                 <p className="text-xl font-bold">
-                  {diasUteis !== null && valorRefeicao
+                  {diasUteis !== null && (Number(valorRefeicao) || 0) > 0
                     ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
-                        diasUteis * valorRefeicao,
+                        diasUteis * (Number(valorRefeicao) || 0),
                       )
-                    : "-"}
+                    : "R$ 0,00"}
                 </p>
               </div>
               <div>
                 <h3 className="font-medium text-sm">Total Transporte:</h3>
                 <p className="text-xl font-bold">
-                  {diasUteis !== null && valorTransporte
+                  {diasUteis !== null && (Number(valorTransporte) || 0) > 0
                     ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
-                        diasUteis * valorTransporte,
+                        diasUteis * (Number(valorTransporte) || 0),
                       )
-                    : "-"}
+                    : "R$ 0,00"}
                 </p>
               </div>
             </div>

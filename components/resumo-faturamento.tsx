@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Loader2, AlertTriangle, Database } from "lucide-react"
-import { supabaseClient } from "@/lib/supabase-client"
+
 import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
@@ -36,41 +36,34 @@ export function ResumoFaturamento() {
       const inicioAno = `${anoAtual}-01-01`
       const fimAno = `${anoAtual}-12-31`
 
-      // Buscar notas fiscais do ano atual
-      const { data, error } = await supabaseClient
-        .from("notas_fiscais")
-        .select("valor_total")
-        .eq("user_id", session.user.id)
-        .gte("data_emissao", inicioAno)
-        .lte("data_emissao", fimAno)
+      // Buscar notas fiscais do ano atual via API local
+      const response = await fetch('/api/notas')
+      const result = await response.json()
 
-      if (error) {
-        // Se o erro for porque a tabela não existe, atualizar o estado
-        if (
-          error.message.includes("does not exist") ||
-          error.message.includes("relation") ||
-          error.message.includes("não existe")
-        ) {
-          setTotalFaturado(0)
-          setPercentualUtilizado(0)
-          setValorRestante(LIMITE_FATURAMENTO_MEI)
-        } else {
-          throw error
-        }
-      } else {
-        // Calcular o total faturado
-        const total = data ? data.reduce((acc, nota) => acc + (nota.valor_total || 0), 0) : 0
-
-        // Calcular o percentual utilizado
-        const percentual = (total / LIMITE_FATURAMENTO_MEI) * 100
-
-        // Calcular o valor restante
-        const restante = LIMITE_FATURAMENTO_MEI - total
-
-        setTotalFaturado(total)
-        setPercentualUtilizado(percentual)
-        setValorRestante(restante)
+      if (!response.ok) {
+        throw new Error(result.error || 'Erro ao buscar notas fiscais')
       }
+
+      const data = result.data || []
+      
+      // Filtrar notas do ano atual
+      const notasDoAno = data.filter((nota: any) => {
+        const dataEmissao = new Date(nota.data_emissao)
+        return dataEmissao.getFullYear() === anoAtual
+      })
+
+      // Calcular o total faturado
+      const total = notasDoAno.reduce((acc: number, nota: any) => acc + (nota.valor_total || 0), 0)
+
+      // Calcular o percentual utilizado
+      const percentual = (total / LIMITE_FATURAMENTO_MEI) * 100
+
+      // Calcular o valor restante
+      const restante = LIMITE_FATURAMENTO_MEI - total
+
+      setTotalFaturado(total)
+      setPercentualUtilizado(percentual)
+      setValorRestante(restante)
     } catch (error) {
       console.error("Erro ao calcular faturamento:", error)
       const errorMessage = error instanceof Error ? error.message : String(error)
