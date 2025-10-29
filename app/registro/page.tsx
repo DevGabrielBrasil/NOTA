@@ -50,8 +50,7 @@ export default function RegistroPage() {
     await signUp({
       email: values.email,
       password: values.password,
-      nome_completo: values.nome_completo,
-      nome_empresa: values.nome_empresa,
+      nome: values.nome_completo, // Mapeando para o nome esperado pela API
       cnpj: values.cnpj,
     });
     setIsSubmitting(false);

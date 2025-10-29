@@ -78,6 +78,12 @@ export default function DashboardLayout({
                   <span>Certidões</span>
                 </Link>
               </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/dashboard/das">
+                  <span className="mr-2">💰</span>
+                  <span>DAS - MEI</span>
+                </Link>
+              </DropdownMenuItem>
                <DropdownMenuItem asChild>
                 <Link href="/dashboard/perfil">
                   <CircleUser className="mr-2 h-4 w-4" />

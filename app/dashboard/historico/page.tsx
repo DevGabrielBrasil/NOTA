@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { supabaseClient } from "@/lib/supabase-client"
+
 import { useAuth } from "@/contexts/auth-context"
 import { toast } from "sonner"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -74,9 +74,14 @@ export default function HistoricoPage() {
     const fetchNotas = async () => {
       if (!session.user) return
 
-      const { data, error } = await supabaseClient
-        .from("notas") // Certifique-se que o nome da tabela está correto
-        .select("*")
+      const response = await fetch('/api/notas')
+      const result = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Erro ao carregar histórico')
+      }
+      
+      const data = result.data
         .eq("user_id", session.user.id)
         // .order("created_at", { ascending: false }) // Opcional: ordenar as notas
 

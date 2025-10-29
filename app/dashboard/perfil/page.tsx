@@ -2,7 +2,7 @@
 
 import { useState, useEffect, type FormEvent } from "react"
 import { useAuth } from "@/contexts/auth-context"
-import { supabaseClient } from "@/lib/supabase-client"
+
 import { toast } from "sonner"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -32,10 +32,7 @@ export default function PerfilPage() {
     }
     setIsLoading(true)
 
-    // Usa o método updateUser para salvar os novos dados nos metadados
-    const { data, error } = await supabaseClient.auth.updateUser({
-      data: { nome, cnpj }
-    })
+    toast.info("Funcionalidade em desenvolvimento")
 
     if (error) {
       toast.error("Erro ao atualizar o perfil", { description: error.message })

@@ -33,6 +33,8 @@ export default function DashboardPage() {
       {/* 2. Componente de Faturamento adicionado de volta */}
       <ResumoFaturamento />
 
+
+
       {/* Sistema de Abas */}
       <Tabs
         value={activeTab}
