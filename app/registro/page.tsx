@@ -19,7 +19,7 @@ const formSchema = z
     cnpj: z.string().min(14, { message: "Por favor, insira um CNPJ válido com 14 ou 18 caracteres." }),
     nome_completo: z.string().min(3, { message: "O seu nome completo é obrigatório." }),
     email: z.string().email({ message: "O email fornecido é inválido." }),
-    password: z.string().min(6, { message: "A palavra-passe deve ter no mínimo 6 caracteres." }),
+    password: z.string().min(8, { message: "A senha deve ter no mínimo 8 caracteres." }),
     confirmPassword: z.string(),
   })
   .refine((data) => data.password === data.confirmPassword, {
@@ -57,7 +57,7 @@ export default function RegistroPage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-4">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
         <Card>
           <CardHeader>

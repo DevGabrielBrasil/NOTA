@@ -1,10 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/auth-context";
+import { useNotas } from "@/hooks/use-notas";
 import { NotaFiscalFormSimplificado } from "@/components/nota-fiscal-form-simplificado";
 import { NotasFiscaisTableSimplificado } from "@/components/notas-fiscais-table-simplificado";
-import { ResumoFaturamento } from "@/components/resumo-faturamento"; // 1. Importado novamente
+import { ResumoFaturamento } from "@/components/resumo-faturamento";
+import { GraficoFaturamento } from "@/components/grafico-faturamento";
+import { RelatorioAnualPdf } from "@/components/relatorio-anual-pdf";
+import { toast } from "sonner";
 import {
   Card,
   CardHeader,
@@ -19,9 +23,43 @@ import {
   TabsContent,
 } from "@/components/ui/tabs";
 
+function getSaudacao(): string {
+  const hora = new Date().getHours();
+  if (hora < 12) return "Bom dia";
+  if (hora < 18) return "Boa tarde";
+  return "Boa noite";
+}
+
 export default function DashboardPage() {
   const { session } = useAuth();
+  const { notas, loading: notasLoading } = useNotas();
   const [activeTab, setActiveTab] = useState("nova-nota");
+  const saudacaoExibida = useRef(false);
+
+  // Toast de boas-vindas com resumo
+  useEffect(() => {
+    if (saudacaoExibida.current || session.isLoading || notasLoading || !session.user) return;
+    saudacaoExibida.current = true;
+
+    const nome = session.user.name?.split(" ")[0] || "usuário";
+    const mesAtual = new Date().getMonth() + 1;
+    const anoAtual = new Date().getFullYear();
+    const notasDoMes = notas.filter((n) => {
+      const match = String(n.data_fim).match(/(\d{4})-(\d{2})/);
+      return match && parseInt(match[1]) === anoAtual && parseInt(match[2]) === mesAtual;
+    });
+
+    const totalMes = notasDoMes.reduce((acc, n) => acc + (Number(n.valor_total) || 0), 0);
+    const formatBRL = (v: number) =>
+      new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
+
+    toast(`${getSaudacao()}, ${nome}!`, {
+      description: notasDoMes.length > 0
+        ? `Você tem ${notasDoMes.length} nota${notasDoMes.length > 1 ? "s" : ""} este mês, totalizando ${formatBRL(totalMes)}.`
+        : "Você ainda não tem notas este mês.",
+      duration: 5000,
+    });
+  }, [session.isLoading, session.user, notasLoading, notas]);
 
   // Se a sessão ainda estiver a carregar, podemos mostrar uma mensagem.
   if (session.isLoading) {
@@ -30,8 +68,12 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* 2. Componente de Faturamento adicionado de volta */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold">Dashboard</h2>
+        <RelatorioAnualPdf />
+      </div>
       <ResumoFaturamento />
+      <GraficoFaturamento />
 
 
 

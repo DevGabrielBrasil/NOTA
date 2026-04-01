@@ -32,8 +32,8 @@ export function UserNav() {
       .substring(0, 2)
   }
 
-  const initials = user.nome
-    ? getInitials(user.nome)
+  const initials = user.name
+    ? getInitials(user.name)
     : user.email.substring(0, 2).toUpperCase()
 
   return (
@@ -49,7 +49,7 @@ export function UserNav() {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">
-              {user.nome || "Usuário"}
+              {user.name || "Usuário"}
             </p>
             <p className="text-xs leading-none text-muted-foreground">
               {user.email}

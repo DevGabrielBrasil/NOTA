@@ -77,9 +77,12 @@ O **Sistema de Gestão de Notas Fiscais MEI** é uma aplicação web completa de
 ### Backend
 - **Next.js API Routes** - APIs serverless
 - **NextAuth.js** - Autenticação
-- **MySQL** - Banco de dados principal
-- **SQLite** - Banco local para desenvolvimento
+- **MySQL** - Banco de dados principal (produção)
+- **SQLite** - Banco local para desenvolvimento (arquivo `database.sqlite`)
 - **bcryptjs** - Hash de senhas
+
+### Ferramentas de desenvolvimento
+- **Beekeeper Studio** - cliente SQL gratuito recomendado para abrir o banco SQLite e inspecionar dados
 
 ### Ferramentas
 - **Biome** - Linting e formatação
@@ -119,8 +122,10 @@ CREATE DATABASE notas_fiscais;
 
 #### Opção B: SQLite (Desenvolvimento)
 ```bash
-# O arquivo database.sqlite será criado automaticamente
+# O arquivo database.sqlite será criado automaticamente na raiz do projeto
 ```
+
+> 💡 **Dica:** se estiver usando SQLite e quiser inspecionar ou consultar o banco diretamente, abra o arquivo `database.sqlite` com um cliente SQL como o [Beekeeper Studio](https://www.beekeeperstudio.io/). Ele oferece interface amigável para navegar pelas tabelas, executar queries e visualizar dados.
 
 ### 4. Configure as variáveis de ambiente
 ```bash

@@ -7,7 +7,7 @@ import { z } from "zod"
 import { Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
+import { CurrencyInput } from "@/components/currency-input"
 import { toast } from "sonner"
 import { PeriodoSelector } from "@/components/periodo-selector"
 import { calcularDiasUteis } from "@/actions/feriados-actions"
@@ -18,10 +18,10 @@ import type { DateRange } from "react-day-picker"
 import { useAuth } from "@/contexts/auth-context"
 
 const formSchema = z.object({
-  salario: z.coerce.number().min(0, "O salário não pode ser negativo"),
-  valorRefeicao: z.coerce.number().min(0, "O valor da refeição não pode ser negativo"),
-  valorTransporte: z.coerce.number().min(0, "O valor do transporte não pode ser negativo"),
-  valorDas: z.coerce.number().min(0, "O valor do DAS não pode ser negativo"),
+  salario: z.number({ invalid_type_error: "Informe o salário" }).min(0, "O salário não pode ser negativo"),
+  valorRefeicao: z.number({ invalid_type_error: "Informe o valor da refeição" }).min(0, "O valor da refeição não pode ser negativo"),
+  valorTransporte: z.number({ invalid_type_error: "Informe o valor do transporte" }).min(0, "O valor do transporte não pode ser negativo"),
+  valorDas: z.number({ invalid_type_error: "Informe o valor do DAS" }).min(0, "O valor do DAS não pode ser negativo"),
   periodo: z
     .object({
       from: z.date().optional(),
@@ -71,19 +71,16 @@ export function NotaFiscalFormSimplificado() {
 
   // Atualizar o valor total calculado sempre que os valores mudarem
   useEffect(() => {
-    if (diasUteis !== null) {
-      const salarioNum = Number(salario) || 0
-      const valorRefeicaoNum = Number(valorRefeicao) || 0
-      const valorTransporteNum = Number(valorTransporte) || 0
-      const valorDasNum = Number(valorDas) || 0
-      
-      const valorTotalRefeicao = diasUteis * valorRefeicaoNum
-      const valorTotalTransporte = diasUteis * valorTransporteNum
-      const total = salarioNum + valorTotalRefeicao + valorTotalTransporte + valorDasNum
-      setValorTotalCalculado(total)
-    } else {
-      setValorTotalCalculado(null)
-    }
+    const salarioNum = Number(salario) || 0
+    const valorRefeicaoNum = Number(valorRefeicao) || 0
+    const valorTransporteNum = Number(valorTransporte) || 0
+    const valorDasNum = Number(valorDas) || 0
+
+    const dias = diasUteis ?? 0
+    const valorTotalRefeicao = dias * valorRefeicaoNum
+    const valorTotalTransporte = dias * valorTransporteNum
+    const total = salarioNum + valorTotalRefeicao + valorTotalTransporte + valorDasNum
+    setValorTotalCalculado(total)
   }, [diasUteis, salario, valorRefeicao, valorTransporte, valorDas])
 
   // Calcular dias úteis quando o período mudar
@@ -131,10 +128,13 @@ export function NotaFiscalFormSimplificado() {
       throw new Error("Usuário não autenticado")
     }
 
+    const formatLocalDate = (d: Date) =>
+      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+
     const notaFiscal = {
-      data_emissao: new Date().toISOString().split('T')[0],
-      data_inicio: values.periodo.from.toISOString().split('T')[0],
-      data_fim: values.periodo.to.toISOString().split('T')[0],
+      data_emissao: formatLocalDate(new Date()),
+      data_inicio: formatLocalDate(values.periodo.from),
+      data_fim: formatLocalDate(values.periodo.to),
       salario: values.salario,
       valor_refeicao: values.valorRefeicao,
       valor_transporte: values.valorTransporte,
@@ -246,7 +246,7 @@ export function NotaFiscalFormSimplificado() {
                 <FormItem>
                   <FormLabel>Salário (R$)</FormLabel>
                   <FormControl>
-                    <Input type="number" step="any" placeholder="0" {...field} />
+                    <CurrencyInput value={field.value} onChange={field.onChange} onBlur={field.onBlur} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -259,7 +259,7 @@ export function NotaFiscalFormSimplificado() {
                 <FormItem>
                   <FormLabel>Valor DAS (R$)</FormLabel>
                   <FormControl>
-                    <Input type="number" step="any" placeholder="0" {...field} />
+                    <CurrencyInput value={field.value} onChange={field.onChange} onBlur={field.onBlur} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -275,7 +275,7 @@ export function NotaFiscalFormSimplificado() {
                 <FormItem>
                   <FormLabel>Valor Refeição (R$)</FormLabel>
                   <FormControl>
-                    <Input type="number" step="any" placeholder="0" {...field} />
+                    <CurrencyInput value={field.value} onChange={field.onChange} onBlur={field.onBlur} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -288,7 +288,7 @@ export function NotaFiscalFormSimplificado() {
                 <FormItem>
                   <FormLabel>Valor Transporte (R$)</FormLabel>
                   <FormControl>
-                    <Input type="number" step="any" placeholder="0" {...field} />
+                    <CurrencyInput value={field.value} onChange={field.onChange} onBlur={field.onBlur} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -343,9 +343,7 @@ export function NotaFiscalFormSimplificado() {
             <div className="mt-4 p-3 bg-blue-50 rounded-md">
               <h3 className="font-medium text-sm text-blue-700">Valor Total da Nota:</h3>
               <p className="text-2xl font-bold text-blue-700">
-                {valorTotalCalculado !== null
-                  ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(valorTotalCalculado)
-                  : "-"}
+                {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(valorTotalCalculado ?? 0)}
               </p>
               <p className="text-xs text-blue-600 mt-1">(Salário + DAS + Total Refeição + Total Transporte)</p>
             </div>

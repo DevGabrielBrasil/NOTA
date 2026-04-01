@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Loader2, AlertTriangle, Database } from "lucide-react"
+import { Loader2, AlertTriangle } from "lucide-react"
 
 import { useAuth } from "@/contexts/auth-context"
 import { Button } from "@/components/ui/button"
@@ -33,9 +33,6 @@ export function ResumoFaturamento() {
 
       // Obter o ano atual
       const anoAtual = new Date().getFullYear()
-      const inicioAno = `${anoAtual}-01-01`
-      const fimAno = `${anoAtual}-12-31`
-
       // Buscar notas fiscais do ano atual via API local
       const response = await fetch('/api/notas')
       const result = await response.json()
@@ -48,12 +45,12 @@ export function ResumoFaturamento() {
       
       // Filtrar notas do ano atual
       const notasDoAno = data.filter((nota: any) => {
-        const dataEmissao = new Date(nota.data_emissao)
-        return dataEmissao.getFullYear() === anoAtual
+        const match = String(nota.data_fim).match(/(\d{4})/)
+        return match && parseInt(match[1]) === anoAtual
       })
 
       // Calcular o total faturado
-      const total = notasDoAno.reduce((acc: number, nota: any) => acc + (nota.valor_total || 0), 0)
+      const total = notasDoAno.reduce((acc: number, nota: any) => acc + (Number(nota.valor_total) || 0), 0)
 
       // Calcular o percentual utilizado
       const percentual = (total / LIMITE_FATURAMENTO_MEI) * 100
@@ -74,7 +71,7 @@ export function ResumoFaturamento() {
   }
   useEffect(() => {
     calcularFaturamento()
-  })
+  }, [session?.user])
   // Atualizar quando uma nota for criada ou excluída
   useEffect(() => {
     const handleNotaChanged = () => {

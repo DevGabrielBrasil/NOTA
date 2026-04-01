@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
+import { headers } from 'next/headers';
+import { auth } from '@/lib/auth';
 import { getDatabase } from '@/lib/database';
-import { authOptions } from '@/lib/auth-config';
 
-export async function GET(request: NextRequest) {
-  const session = await getServerSession(authOptions);
+export async function GET(_request: NextRequest) {
+  const session = await auth.api.getSession({ headers: await headers() });
   
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
@@ -12,14 +12,14 @@ export async function GET(request: NextRequest) {
 
   try {
     const db = await getDatabase();
-    const notas = await db.all(
-      `SELECT * FROM notas_fiscais 
-       WHERE user_id = ? 
+    const result = await db.query(
+      `SELECT * FROM notas_fiscais
+       WHERE user_id = $1
        ORDER BY data_emissao DESC`,
       [session.user.id]
     );
 
-    return NextResponse.json({ success: true, data: notas });
+    return NextResponse.json({ success: true, data: result.rows });
   } catch (error) {
     console.error('Erro ao buscar notas:', error);
     return NextResponse.json(
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  const session = await getServerSession(authOptions);
+  const session = await auth.api.getSession({ headers: await headers() });
   
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
@@ -53,12 +53,13 @@ export async function POST(request: NextRequest) {
     } = await request.json();
 
     const db = await getDatabase();
-    const result = await db.run(
+    const result = await db.query(
       `INSERT INTO notas_fiscais (
         user_id, data_emissao, data_inicio, data_fim, salario,
         valor_refeicao, valor_transporte, valor_das, dias_trabalhados,
         valor_total_refeicao, valor_total_transporte, valor_total, cnpj
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      RETURNING id`,
       [
         session.user.id, data_emissao, data_inicio, data_fim, salario,
         valor_refeicao, valor_transporte, valor_das, dias_trabalhados,
@@ -69,7 +70,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'Nota fiscal criada com sucesso',
-      id: result.lastID
+      id: result.rows[0].id
     }, { status: 201 });
   } catch (error) {
     console.error('Erro ao criar nota:', error);

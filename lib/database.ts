@@ -1,76 +1,51 @@
-import sqlite3 from 'sqlite3';
-import { open, Database } from 'sqlite';
-import path from 'path';
+import { Pool } from 'pg';
 
-let db: Database | null = null;
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
 
-export async function getDatabase(): Promise<Database> {
-  if (db) {
-    return db;
-  }
-
-  db = await open({
-    filename: path.join(process.cwd(), 'database.sqlite'),
-    driver: sqlite3.Database
-  });
-
-  // Criar tabelas se não existirem
-  await initializeTables();
-  
-  return db;
+export async function getDatabase() {
+  return pool;
 }
 
-async function initializeTables() {
-  if (!db) return;
+export async function initializeDatabase() {
+  const client = await pool.connect();
+  try {
+    // user_id é TEXT para compatibilidade com os IDs do Better Auth
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS notas_fiscais (
+        id SERIAL PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        data_emissao DATE NOT NULL,
+        data_inicio DATE NOT NULL,
+        data_fim DATE NOT NULL,
+        salario NUMERIC NOT NULL,
+        valor_refeicao NUMERIC NOT NULL,
+        valor_transporte NUMERIC NOT NULL,
+        valor_das NUMERIC DEFAULT 0,
+        dias_trabalhados INTEGER NOT NULL,
+        valor_total_refeicao NUMERIC NOT NULL,
+        valor_total_transporte NUMERIC NOT NULL,
+        valor_total NUMERIC NOT NULL,
+        cnpj TEXT,
+        created_at TIMESTAMPTZ DEFAULT NOW()
+      )
+    `);
 
-  // Tabela de usuários
-  await db.exec(`
-    CREATE TABLE IF NOT EXISTS usuarios (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      email TEXT UNIQUE NOT NULL,
-      nome TEXT NOT NULL,
-      cnpj TEXT NOT NULL,
-      senha_hash TEXT NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS configuracoes (
+        id SERIAL PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        limite_faturamento_anual NUMERIC DEFAULT 81000.00,
+        ano_fiscal INTEGER NOT NULL,
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW(),
+        UNIQUE(user_id, ano_fiscal)
+      )
+    `);
 
-  // Tabela de notas fiscais
-  await db.exec(`
-    CREATE TABLE IF NOT EXISTS notas_fiscais (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      data_emissao DATE NOT NULL,
-      data_inicio DATE NOT NULL,
-      data_fim DATE NOT NULL,
-      salario REAL NOT NULL,
-      valor_refeicao REAL NOT NULL,
-      valor_transporte REAL NOT NULL,
-      valor_das REAL DEFAULT 0,
-      dias_trabalhados INTEGER NOT NULL,
-      valor_total_refeicao REAL NOT NULL,
-      valor_total_transporte REAL NOT NULL,
-      valor_total REAL NOT NULL,
-      cnpj TEXT,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE CASCADE
-    )
-  `);
-
-  // Tabela de configurações
-  await db.exec(`
-    CREATE TABLE IF NOT EXISTS configuracoes (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id INTEGER NOT NULL,
-      limite_faturamento_anual REAL DEFAULT 81000.00,
-      ano_fiscal INTEGER NOT NULL,
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      UNIQUE(user_id, ano_fiscal),
-      FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE CASCADE
-    )
-  `);
-
-  console.log('Tabelas do banco de dados inicializadas com sucesso');
+    console.log('Tabelas da aplicação inicializadas com sucesso');
+  } finally {
+    client.release();
+  }
 }

@@ -29,16 +29,6 @@ export function PeriodoSelector({ value, onChange, defaultMonth }: PeriodoSelect
   )
   const [isOpen, setIsOpen] = useState(false)
 
-  const selecionarMesAnterior = () => {
-    const anterior = new Date(visibleMonth)
-    anterior.setMonth(anterior.getMonth() - 1)
-    setVisibleMonth(anterior)
-    setDate({
-      from: undefined,
-      to: undefined,
-    })
-  }
-
   const confirmarSelecao = () => {
     if (date?.from && date?.to) {
       onChange(date)
@@ -57,12 +47,13 @@ export function PeriodoSelector({ value, onChange, defaultMonth }: PeriodoSelect
           <Button
             id="date"
             variant="outline"
+            size="sm"
             className={cn(
-              "w-full justify-start text-left font-normal",
+              "w-fit justify-start text-left font-normal h-8 text-xs",
               !date?.from && !date?.to && "text-muted-foreground",
             )}
           >
-            <CalendarIcon className="mr-2 h-4 w-4" />
+            <CalendarIcon className="mr-1.5 h-3.5 w-3.5" />
             {date?.from ? (
               date.to ? (
                 <>
@@ -90,8 +81,11 @@ export function PeriodoSelector({ value, onChange, defaultMonth }: PeriodoSelect
             locale={ptBR}
           />
           <div className="p-3 border-t border-border flex flex-col gap-2">
-            <Button variant="outline" size="sm" className="w-full" onClick={selecionarMesAnterior}>
-              Mostrar mês anterior
+            <Button variant="outline" size="sm" className="w-full" onClick={() => {
+              setDate({ from: undefined, to: undefined })
+              onChange({ from: undefined, to: undefined } as any)
+            }}>
+              Limpar
             </Button>
             <Button
               size="sm"

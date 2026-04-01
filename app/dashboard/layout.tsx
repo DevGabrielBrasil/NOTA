@@ -3,7 +3,6 @@
 import Link from "next/link";
 import {
   CircleUser,
-  Home,
   Package2,
   FileText,
   LayoutDashboard,
@@ -19,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/auth-context";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 // Este componente define a estrutura visual de todas as páginas dentro do dashboard
 export default function DashboardLayout({
@@ -52,10 +52,8 @@ export default function DashboardLayout({
           </Link>
         </nav>
         <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
-          <div className="ml-auto flex-1 sm:flex-initial">
-             {/* Espaço para busca, se necessário */}
-          </div>
-          {/* O menu de navegação agora está dentro deste Dropdown */}
+          <div className="ml-auto flex-1 sm:flex-initial" />
+          <ThemeToggle />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="secondary" size="icon" className="rounded-full">
@@ -79,12 +77,6 @@ export default function DashboardLayout({
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href="/dashboard/das">
-                  <span className="mr-2">💰</span>
-                  <span>DAS - MEI</span>
-                </Link>
-              </DropdownMenuItem>
-               <DropdownMenuItem asChild>
                 <Link href="/dashboard/perfil">
                   <CircleUser className="mr-2 h-4 w-4" />
                   <span>Perfil</span>

@@ -10,8 +10,8 @@ import { CalendarIcon, Loader2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
+import { CurrencyInput } from "@/components/currency-input"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import {
   Dialog,
@@ -23,22 +23,16 @@ import {
 } from "@/components/ui/dialog"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
-import { editarNotaFiscal, getNotaFiscalById } from "@/actions/nota-fiscal-actions"
 import { calcularDiasUteis } from "@/actions/feriados-actions"
-import { useAppContext } from "@/contexts/app-context"
 import type { NotaFiscal } from "@/types/nota-fiscal"
 
 const formSchema = z
   .object({
-    salario: z.coerce.number().positive("O salário deve ser maior que zero"),
-    valorRefeicao: z.coerce.number().positive("O valor da refeição deve ser maior que zero"),
-    valorTransporte: z.coerce.number().positive("O valor do transporte deve ser maior que zero"),
-    dataInicio: z.date({
-      required_error: "A data de início é obrigatória",
-    }),
-    dataFim: z.date({
-      required_error: "A data de fim é obrigatória",
-    }),
+    salario: z.number({ invalid_type_error: "Informe o salário" }).min(0, "O salário não pode ser negativo"),
+    valorRefeicao: z.number({ invalid_type_error: "Informe o valor" }).min(0, "O valor não pode ser negativo"),
+    valorTransporte: z.number({ invalid_type_error: "Informe o valor" }).min(0, "O valor não pode ser negativo"),
+    dataInicio: z.date({ required_error: "A data de início é obrigatória" }),
+    dataFim: z.date({ required_error: "A data de fim é obrigatória" }),
   })
   .refine((data) => data.dataFim >= data.dataInicio, {
     message: "A data final deve ser maior ou igual à data inicial",
@@ -52,13 +46,11 @@ interface EditarNotaModalProps {
 }
 
 export function EditarNotaModal({ notaId, isOpen, onClose }: EditarNotaModalProps) {
-  const { refreshData } = useAppContext()
   const [diasUteis, setDiasUteis] = useState<number | null>(null)
   const [isCalculando, setIsCalculando] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [valorTotalCalculado, setValorTotalCalculado] = useState<number | null>(null)
-  const [notaOriginal, setNotaOriginal] = useState<NotaFiscal | null>(null)
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -77,35 +69,36 @@ export function EditarNotaModal({ notaId, isOpen, onClose }: EditarNotaModalProp
   const valorRefeicao = form.watch("valorRefeicao")
   const valorTransporte = form.watch("valorTransporte")
 
-  // Carregar dados da nota fiscal
+  // Carregar dados da nota fiscal via API
   useEffect(() => {
     const carregarNota = async () => {
       if (notaId && isOpen) {
         setIsLoading(true)
         try {
-          const nota = await getNotaFiscalById(notaId)
-          if (nota) {
-            setNotaOriginal(nota)
+          const response = await fetch('/api/notas')
+          const result = await response.json()
+          if (!response.ok) throw new Error(result.error)
 
-            // Converter strings de data para objetos Date
-            const dataInicio = parse(nota.data_inicio, "yyyy-MM-dd", new Date())
-            const dataFim = parse(nota.data_fim, "yyyy-MM-dd", new Date())
+          const nota = (result.data as NotaFiscal[]).find((n) => n.id === notaId)
+          if (nota) {
+            const di = parse(nota.data_inicio.toString().split('T')[0], "yyyy-MM-dd", new Date())
+            const df = parse(nota.data_fim.toString().split('T')[0], "yyyy-MM-dd", new Date())
 
             form.reset({
-              salario: nota.salario,
-              valorRefeicao: nota.valor_refeicao,
-              valorTransporte: nota.valor_transporte,
-              dataInicio,
-              dataFim,
+              salario: Number(nota.salario),
+              valorRefeicao: Number(nota.valor_refeicao),
+              valorTransporte: Number(nota.valor_transporte),
+              dataInicio: di,
+              dataFim: df,
             })
 
             setDiasUteis(nota.dias_trabalhados)
-            setValorTotalCalculado(nota.valor_total)
+            setValorTotalCalculado(Number(nota.valor_total))
           }
         } catch (error) {
           console.error("Erro ao carregar nota fiscal:", error)
-          toast.error("Erro ao carregar nota fiscal",{
-            description: "Não foi possível carregar os dados da nota fiscal. Tente novamente.",
+          toast.error("Erro ao carregar nota fiscal", {
+            description: "Não foi possível carregar os dados da nota fiscal.",
           })
           onClose()
         } finally {
@@ -115,18 +108,15 @@ export function EditarNotaModal({ notaId, isOpen, onClose }: EditarNotaModalProp
     }
 
     carregarNota()
-  }, [notaId, isOpen, form, toast, onClose])
+  }, [notaId, isOpen])
 
-  // Atualizar o valor total calculado sempre que os valores mudarem
+  // Atualizar o valor total calculado
   useEffect(() => {
-    if (diasUteis !== null) {
-      const valorTotalRefeicao = diasUteis * valorRefeicao
-      const valorTotalTransporte = diasUteis * valorTransporte
-      const total = Number(salario) + valorTotalRefeicao + valorTotalTransporte
-      setValorTotalCalculado(total)
-    } else {
-      setValorTotalCalculado(null)
-    }
+    const dias = diasUteis ?? 0
+    const valorTotalRefeicao = dias * (Number(valorRefeicao) || 0)
+    const valorTotalTransporte = dias * (Number(valorTransporte) || 0)
+    const total = (Number(salario) || 0) + valorTotalRefeicao + valorTotalTransporte
+    setValorTotalCalculado(total)
   }, [diasUteis, salario, valorRefeicao, valorTransporte])
 
   // Calcular dias úteis quando as datas mudarem
@@ -139,9 +129,7 @@ export function EditarNotaModal({ notaId, isOpen, onClose }: EditarNotaModalProp
           setDiasUteis(dias)
         } catch (error) {
           console.error("Erro ao calcular dias úteis:", error)
-          toast.error("Erro ao calcular dias úteis",{
-            description: "Não foi possível calcular os dias úteis. Tente novamente.",
-          })
+          toast.error("Erro ao calcular dias úteis")
         } finally {
           setIsCalculando(false)
         }
@@ -151,13 +139,11 @@ export function EditarNotaModal({ notaId, isOpen, onClose }: EditarNotaModalProp
     }
 
     calcularDias()
-  }, [dataInicio, dataFim, toast])
+  }, [dataInicio, dataFim])
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!notaId || !diasUteis) {
-      toast.error("Erro ao editar nota fiscal",{
-        description: "Dados incompletos. Tente novamente.",
-      })
+      toast.error("Dados incompletos. Tente novamente.")
       return
     }
 
@@ -165,34 +151,47 @@ export function EditarNotaModal({ notaId, isOpen, onClose }: EditarNotaModalProp
     try {
       const valorTotalRefeicao = diasUteis * values.valorRefeicao
       const valorTotalTransporte = diasUteis * values.valorTransporte
-      const valorTotal = Number(values.salario) + valorTotalRefeicao + valorTotalTransporte
+      const valorTotal = values.salario + valorTotalRefeicao + valorTotalTransporte
 
-      await editarNotaFiscal(notaId, {
-        ...values,
-        diasUteis,
-        valorTotalRefeicao,
-        valorTotalTransporte,
-        valorTotal,
+      const response = await fetch(`/api/notas/${notaId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          data_inicio: values.dataInicio.toISOString().split('T')[0],
+          data_fim: values.dataFim.toISOString().split('T')[0],
+          salario: values.salario,
+          valor_refeicao: values.valorRefeicao,
+          valor_transporte: values.valorTransporte,
+          dias_trabalhados: diasUteis,
+          valor_total_refeicao: valorTotalRefeicao,
+          valor_total_transporte: valorTotalTransporte,
+          valor_total: valorTotal,
+        }),
       })
 
-      toast.success("Nota fiscal atualizada com sucesso!",{
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Erro ao editar nota fiscal')
+      }
+
+      toast.success("Nota fiscal atualizada com sucesso!", {
         description: `Valor total: ${new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(valorTotal)}`,
       })
 
-      refreshData() // Atualiza o contexto global
-      onClose() // Fecha o modal
+      window.dispatchEvent(new Event("notaFiscalCreated"))
+      onClose()
     } catch (error) {
       console.error("Erro ao editar nota fiscal:", error)
-      toast.error("Erro ao editar nota fiscal",{
-        description:
-          typeof error === "object" && error !== null && "message" in error
-            ? String(error.message)
-            : "Não foi possível editar a nota fiscal. Tente novamente.",
+      toast.error("Erro ao editar nota fiscal", {
+        description: error instanceof Error ? error.message : "Tente novamente.",
       })
     } finally {
       setIsSubmitting(false)
     }
   }
+
+  const formatBRL = (value: number) =>
+    new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value)
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -218,7 +217,7 @@ export function EditarNotaModal({ notaId, isOpen, onClose }: EditarNotaModalProp
                     <FormItem>
                       <FormLabel>Salário (R$)</FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                        <CurrencyInput value={field.value} onChange={field.onChange} onBlur={field.onBlur} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -231,7 +230,7 @@ export function EditarNotaModal({ notaId, isOpen, onClose }: EditarNotaModalProp
                     <FormItem>
                       <FormLabel>Valor Refeição (R$)</FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                        <CurrencyInput value={field.value} onChange={field.onChange} onBlur={field.onBlur} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -244,7 +243,7 @@ export function EditarNotaModal({ notaId, isOpen, onClose }: EditarNotaModalProp
                     <FormItem>
                       <FormLabel>Valor Transporte (R$)</FormLabel>
                       <FormControl>
-                        <Input type="number" step="0.01" placeholder="0.00" {...field} />
+                        <CurrencyInput value={field.value} onChange={field.onChange} onBlur={field.onBlur} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -263,30 +262,19 @@ export function EditarNotaModal({ notaId, isOpen, onClose }: EditarNotaModalProp
                         <PopoverTrigger asChild>
                           <FormControl>
                             <Button
-                              variant={"outline"}
+                              variant="outline"
                               className={cn(
                                 "w-full pl-3 text-left font-normal",
                                 !field.value && "text-muted-foreground",
                               )}
                             >
-                              {field.value ? (
-                                format(field.value, "PPP", { locale: ptBR })
-                              ) : (
-                                <span>Selecione uma data</span>
-                              )}
+                              {field.value ? format(field.value, "PPP", { locale: ptBR }) : <span>Selecione uma data</span>}
                               <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                             </Button>
                           </FormControl>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={(date) => date < new Date("1900-01-01")}
-                            initialFocus
-                            locale={ptBR}
-                          />
+                          <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus locale={ptBR} />
                         </PopoverContent>
                       </Popover>
                       <FormMessage />
@@ -303,30 +291,19 @@ export function EditarNotaModal({ notaId, isOpen, onClose }: EditarNotaModalProp
                         <PopoverTrigger asChild>
                           <FormControl>
                             <Button
-                              variant={"outline"}
+                              variant="outline"
                               className={cn(
                                 "w-full pl-3 text-left font-normal",
                                 !field.value && "text-muted-foreground",
                               )}
                             >
-                              {field.value ? (
-                                format(field.value, "PPP", { locale: ptBR })
-                              ) : (
-                                <span>Selecione uma data</span>
-                              )}
+                              {field.value ? format(field.value, "PPP", { locale: ptBR }) : <span>Selecione uma data</span>}
                               <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                             </Button>
                           </FormControl>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={(date) => date < new Date("1900-01-01")}
-                            initialFocus
-                            locale={ptBR}
-                          />
+                          <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus locale={ptBR} />
                         </PopoverContent>
                       </Popover>
                       <FormMessage />
@@ -340,55 +317,26 @@ export function EditarNotaModal({ notaId, isOpen, onClose }: EditarNotaModalProp
                   <div>
                     <h3 className="font-medium text-sm">Dias Úteis:</h3>
                     <p className="text-xl font-bold">
-                      {isCalculando ? (
-                        <Loader2 className="h-5 w-5 animate-spin inline mr-2" />
-                      ) : diasUteis !== null ? (
-                        diasUteis
-                      ) : (
-                        "-"
-                      )}
+                      {isCalculando ? <Loader2 className="h-5 w-5 animate-spin inline mr-2" /> : diasUteis ?? "-"}
                     </p>
                   </div>
                   <div>
                     <h3 className="font-medium text-sm">Salário:</h3>
-                    <p className="text-xl font-bold">
-                      {salario
-                        ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(salario)
-                        : "-"}
-                    </p>
+                    <p className="text-xl font-bold">{formatBRL(Number(salario) || 0)}</p>
                   </div>
                   <div>
                     <h3 className="font-medium text-sm">Total Refeição:</h3>
-                    <p className="text-xl font-bold">
-                      {diasUteis !== null && valorRefeicao
-                        ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
-                            diasUteis * valorRefeicao,
-                          )
-                        : "-"}
-                    </p>
+                    <p className="text-xl font-bold">{formatBRL((diasUteis ?? 0) * (Number(valorRefeicao) || 0))}</p>
                   </div>
                   <div>
                     <h3 className="font-medium text-sm">Total Transporte:</h3>
-                    <p className="text-xl font-bold">
-                      {diasUteis !== null && valorTransporte
-                        ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
-                            diasUteis * valorTransporte,
-                          )
-                        : "-"}
-                    </p>
+                    <p className="text-xl font-bold">{formatBRL((diasUteis ?? 0) * (Number(valorTransporte) || 0))}</p>
                   </div>
                 </div>
 
-                {/* Adicionar o valor total calculado */}
                 <div className="mt-4 p-3 bg-blue-50 rounded-md">
                   <h3 className="font-medium text-sm text-blue-700">Valor Total da Nota:</h3>
-                  <p className="text-2xl font-bold text-blue-700">
-                    {valorTotalCalculado !== null
-                      ? new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
-                          valorTotalCalculado,
-                        )
-                      : "-"}
-                  </p>
+                  <p className="text-2xl font-bold text-blue-700">{formatBRL(valorTotalCalculado ?? 0)}</p>
                   <p className="text-xs text-blue-600 mt-1">(Salário + Total Refeição + Total Transporte)</p>
                 </div>
               </div>

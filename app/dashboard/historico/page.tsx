@@ -8,52 +8,52 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { format } from "date-fns"
+import { formatarValor, formatarData } from "@/utils/formatters"
 
-// Supondo que a estrutura de uma nota seja esta
 interface Nota {
-  id: number;
-  numero_nota: string;
-  nome_cliente: string;
-  valor: number;
-  status: 'Paga' | 'Pendente' | 'Cancelada';
-  created_at: string;
-  // Adicione outros campos da nota conforme necessário
+  id: number
+  data_emissao: string
+  valor_total: number
+  cnpj?: string
+  salario: number
+  valor_refeicao: number
+  valor_transporte: number
+  data_inicio: string
+  data_fim: string
+  dias_trabalhados: number
 }
 
-// Componente do Modal de Resumo
-function ResumoNotaModal({ nota, cnpj, onClose }: { nota: Nota | null; cnpj: string | undefined; onClose: () => void }) {
+function ResumoNotaModal({ nota, onClose }: { nota: Nota | null; onClose: () => void }) {
   if (!nota) return null
 
   return (
     <Dialog open={!!nota} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Resumo da Nota Fiscal #{nota.numero_nota}</DialogTitle>
+          <DialogTitle>Resumo da Nota Fiscal</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-2 items-center gap-4">
-            <p className="text-muted-foreground">CNPJ do Emissor</p>
-            <p className="font-semibold text-right">{cnpj || "Não informado"}</p>
+            <p className="text-muted-foreground">Valor Total</p>
+            <p className="font-semibold text-right">{formatarValor(nota.valor_total)}</p>
           </div>
           <div className="grid grid-cols-2 items-center gap-4">
-            <p className="text-muted-foreground">Cliente</p>
-            <p className="font-semibold text-right">{nota.nome_cliente}</p>
-          </div>
-           <div className="grid grid-cols-2 items-center gap-4">
-            <p className="text-muted-foreground">Valor</p>
-            <p className="font-semibold text-right">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(nota.valor)}</p>
+            <p className="text-muted-foreground">Salário</p>
+            <p className="font-semibold text-right">{formatarValor(nota.salario)}</p>
           </div>
           <div className="grid grid-cols-2 items-center gap-4">
-            <p className="text-muted-foreground">Status</p>
-            <div className="text-right">
-              <Badge variant={nota.status === 'Paga' ? 'default' : 'destructive'}>{nota.status}</Badge>
-            </div>
-          </div>
-           <div className="grid grid-cols-2 items-center gap-4">
             <p className="text-muted-foreground">Data de Emissão</p>
-            <p className="font-semibold text-right">{format(new Date(nota.created_at), "dd/MM/yyyy")}</p>
+            <p className="font-semibold text-right">{formatarData(nota.data_emissao.toString().split('T')[0])}</p>
+          </div>
+          <div className="grid grid-cols-2 items-center gap-4">
+            <p className="text-muted-foreground">Período</p>
+            <p className="font-semibold text-right">
+              {formatarData(nota.data_inicio.toString().split('T')[0])} - {formatarData(nota.data_fim.toString().split('T')[0])}
+            </p>
+          </div>
+          <div className="grid grid-cols-2 items-center gap-4">
+            <p className="text-muted-foreground">Dias Trabalhados</p>
+            <p className="font-semibold text-right">{nota.dias_trabalhados}</p>
           </div>
         </div>
       </DialogContent>
@@ -66,29 +66,23 @@ export default function HistoricoPage() {
   const { session } = useAuth()
   const [notas, setNotas] = useState<Nota[]>([])
   const [notaSelecionada, setNotaSelecionada] = useState<Nota | null>(null)
-  
-  // Busca o CNPJ dos metadados do usuário
-  const cnpjDoUsuario = session.user?.user_metadata?.cnpj
 
   useEffect(() => {
     const fetchNotas = async () => {
       if (!session.user) return
 
-      const response = await fetch('/api/notas')
-      const result = await response.json()
-      
-      if (!response.ok) {
-        throw new Error(result.error || 'Erro ao carregar histórico')
-      }
-      
-      const data = result.data
-        .eq("user_id", session.user.id)
-        // .order("created_at", { ascending: false }) // Opcional: ordenar as notas
+      try {
+        const response = await fetch('/api/notas')
+        const result = await response.json()
 
-      if (error) {
-        toast.error("Erro ao buscar histórico de notas", { description: error.message })
-      } else {
-        setNotas(data || [])
+        if (!response.ok) {
+          throw new Error(result.error || 'Erro ao carregar histórico')
+        }
+
+        setNotas(result.data || [])
+      } catch (err) {
+        console.error(err)
+        toast.error("Erro ao buscar histórico de notas")
       }
     }
 
@@ -105,22 +99,16 @@ export default function HistoricoPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nº da Nota</TableHead>
-                <TableHead>Cliente</TableHead>
-                <TableHead>Valor</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>Data de Emissão</TableHead>
+                <TableHead className="text-right">Valor</TableHead>
                 <TableHead>Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {notas.length > 0 ? notas.map((nota) => (
                 <TableRow key={nota.id}>
-                  <TableCell>{nota.numero_nota}</TableCell>
-                  <TableCell>{nota.nome_cliente}</TableCell>
-                  <TableCell>{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(nota.valor)}</TableCell>
-                  <TableCell>
-                     <Badge variant={nota.status === 'Paga' ? 'default' : 'destructive'}>{nota.status}</Badge>
-                  </TableCell>
+                  <TableCell>{formatarData(nota.data_emissao.toString().split('T')[0])}</TableCell>
+                  <TableCell className="text-right">{formatarValor(nota.valor_total)}</TableCell>
                   <TableCell>
                     <Button variant="outline" size="sm" onClick={() => setNotaSelecionada(nota)}>
                       Ver Resumo
@@ -129,7 +117,7 @@ export default function HistoricoPage() {
                 </TableRow>
               )) : (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center">Nenhuma nota encontrada.</TableCell>
+                  <TableCell colSpan={3} className="text-center">Nenhuma nota encontrada.</TableCell>
                 </TableRow>
               )}
             </TableBody>
@@ -137,10 +125,9 @@ export default function HistoricoPage() {
         </CardContent>
       </Card>
 
-      <ResumoNotaModal 
-        nota={notaSelecionada} 
-        cnpj={cnpjDoUsuario}
-        onClose={() => setNotaSelecionada(null)} 
+      <ResumoNotaModal
+        nota={notaSelecionada}
+        onClose={() => setNotaSelecionada(null)}
       />
     </>
   )

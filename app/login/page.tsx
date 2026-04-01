@@ -29,7 +29,7 @@ import { useRouter } from "next/navigation"
 
 const formSchema = z.object({
   email: z.string().email("Email inválido"),
-  password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres"),
+  password: z.string().min(8, "A senha deve ter pelo menos 8 caracteres"),
 })
 
 export default function LoginPage() {
