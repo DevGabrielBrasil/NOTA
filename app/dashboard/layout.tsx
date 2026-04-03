@@ -6,6 +6,8 @@ import {
   Package2,
   FileText,
   LayoutDashboard,
+  Calculator,
+  Receipt,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -71,9 +73,21 @@ export default function DashboardLayout({
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
+                <Link href="/dashboard/das">
+                  <Receipt className="mr-2 h-4 w-4" />
+                  <span>Pagamento DAS</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
                 <Link href="/dashboard/certidoes">
                   <FileText className="mr-2 h-4 w-4" />
                   <span>Certidões</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/dashboard/simulador">
+                  <Calculator className="mr-2 h-4 w-4" />
+                  <span>Simulador MEI/ME</span>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>

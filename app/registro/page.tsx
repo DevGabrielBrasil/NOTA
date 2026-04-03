@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import Link from "next/link"
-import { Loader2 } from "lucide-react"
+import { Loader2, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
@@ -30,6 +30,7 @@ const formSchema = z
 export default function RegistroPage() {
   const { signUp } = useAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [buscandoCnpj, setBuscandoCnpj] = useState(false)
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -44,7 +45,24 @@ export default function RegistroPage() {
     },
   });
 
-  // 3. Função de envio atualizada para passar o CNPJ
+  const buscarCnpj = async () => {
+    const cnpj = form.getValues("cnpj").replace(/\D/g, "")
+    if (cnpj.length !== 14) return
+
+    setBuscandoCnpj(true)
+    try {
+      const res = await fetch(`/api/cnpj?cnpj=${cnpj}`)
+      const data = await res.json()
+      if (res.ok && data.data) {
+        const nomeEmpresa = data.data.nome_fantasia || data.data.razao_social
+        if (nomeEmpresa) {
+          form.setValue("nome_empresa", nomeEmpresa)
+        }
+      }
+    } catch { /* silencioso no registro */ }
+    finally { setBuscandoCnpj(false) }
+  }
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
     await signUp({
@@ -81,14 +99,28 @@ export default function RegistroPage() {
                   )}
                 />
                 
-                {/* 4. Campo visual do CNPJ adicionado ao formulário */}
                 <FormField
                   control={form.control}
                   name="cnpj"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>CNPJ da Empresa</FormLabel>
-                      <FormControl><Input placeholder="00.000.000/0000-00" {...field} /></FormControl>
+                      <div className="flex gap-2">
+                        <FormControl><Input placeholder="00.000.000/0000-00" {...field} /></FormControl>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="icon"
+                          onClick={buscarCnpj}
+                          disabled={buscandoCnpj}
+                          title="Buscar dados do CNPJ"
+                        >
+                          {buscandoCnpj ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Clique na lupa para preencher o nome automaticamente.
+                      </p>
                       <FormMessage />
                     </FormItem>
                   )}

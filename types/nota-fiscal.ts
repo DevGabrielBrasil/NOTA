@@ -9,9 +9,12 @@ export interface NotaFiscal {
   dias_trabalhados: number
   valor_total_refeicao: number
   valor_total_transporte: number
-  valor_das: number // Adicionado campo para o DAS
+  valor_das: number
   valor_total: number
-  cnpj?: string // Campo opcional para CNPJ
+  cnpj?: string
+  tipo?: 'manual' | 'importada'
+  numero_nota?: string
+  descricao?: string
 }
 
 export interface NotaFiscalInput {

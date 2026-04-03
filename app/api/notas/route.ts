@@ -49,7 +49,10 @@ export async function POST(request: NextRequest) {
       valor_total_refeicao,
       valor_total_transporte,
       valor_total,
-      cnpj
+      cnpj,
+      tipo,
+      numero_nota,
+      descricao,
     } = await request.json();
 
     const db = await getDatabase();
@@ -57,13 +60,15 @@ export async function POST(request: NextRequest) {
       `INSERT INTO notas_fiscais (
         user_id, data_emissao, data_inicio, data_fim, salario,
         valor_refeicao, valor_transporte, valor_das, dias_trabalhados,
-        valor_total_refeicao, valor_total_transporte, valor_total, cnpj
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        valor_total_refeicao, valor_total_transporte, valor_total, cnpj,
+        tipo, numero_nota, descricao
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
       RETURNING id`,
       [
         session.user.id, data_emissao, data_inicio, data_fim, salario,
         valor_refeicao, valor_transporte, valor_das, dias_trabalhados,
-        valor_total_refeicao, valor_total_transporte, valor_total, cnpj
+        valor_total_refeicao, valor_total_transporte, valor_total, cnpj,
+        tipo || 'manual', numero_nota || null, descricao || null,
       ]
     );
 

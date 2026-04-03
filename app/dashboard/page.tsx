@@ -8,6 +8,7 @@ import { NotasFiscaisTableSimplificado } from "@/components/notas-fiscais-table-
 import { ResumoFaturamento } from "@/components/resumo-faturamento";
 import { GraficoFaturamento } from "@/components/grafico-faturamento";
 import { RelatorioAnualPdf } from "@/components/relatorio-anual-pdf";
+import { ImportarNotaXml } from "@/components/importar-nota-xml";
 import { toast } from "sonner";
 import {
   Card,
@@ -83,9 +84,10 @@ export default function DashboardPage() {
         onValueChange={setActiveTab}
         className="w-full"
       >
-        <TabsList className="grid w-full grid-cols-2 mb-4">
-          <TabsTrigger value="nova-nota">Nova Nota Fiscal</TabsTrigger>
-          <TabsTrigger value="historico">Histórico de Notas</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-3 mb-4">
+          <TabsTrigger value="nova-nota">Nova Nota</TabsTrigger>
+          <TabsTrigger value="importar">Importar XML</TabsTrigger>
+          <TabsTrigger value="historico">Histórico</TabsTrigger>
         </TabsList>
 
         {/* Aba Nova Nota */}
@@ -99,6 +101,21 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <NotaFiscalFormSimplificado />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Aba Importar XML */}
+        <TabsContent value="importar">
+          <Card>
+            <CardHeader>
+              <CardTitle>Importar Nota Fiscal (XML)</CardTitle>
+              <CardDescription>
+                Importe o XML da nota emitida pelo Emissor Nacional para calcular o faturamento automaticamente
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ImportarNotaXml />
             </CardContent>
           </Card>
         </TabsContent>

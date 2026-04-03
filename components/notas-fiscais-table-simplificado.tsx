@@ -16,7 +16,8 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { cnpjMask, formatarData, formatarValor } from "@/utils/formatters"
-import { Loader2, AlertTriangle, DownloadIcon, TrashIcon, NotepadText } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Loader2, AlertTriangle, DownloadIcon, TrashIcon, NotepadText, Upload, FileEdit } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import type { NotaFiscal } from "@/types/nota-fiscal"
 import { useNotas } from "@/hooks/use-notas"
@@ -107,6 +108,7 @@ export function NotasFiscaisTableSimplificado() {
             <TableHeader>
               <TableRow>
                 <TableHead>Data de Emissão</TableHead>
+                <TableHead>Tipo</TableHead>
                 <TableHead className="text-right">Valor</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
@@ -115,6 +117,19 @@ export function NotasFiscaisTableSimplificado() {
               {notas.map((nota) => (
                 <TableRow key={nota.id}>
                   <TableCell>{formatarData(nota.data_emissao.toString())}</TableCell>
+                  <TableCell>
+                    {(nota as any).tipo === "importada" ? (
+                      <Badge variant="secondary" className="text-xs">
+                        <Upload className="mr-1 h-3 w-3" />
+                        Importada
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-xs">
+                        <FileEdit className="mr-1 h-3 w-3" />
+                        Manual
+                      </Badge>
+                    )}
+                  </TableCell>
                   <TableCell className="text-right">{formatarValor(nota.valor_total)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end items-center space-x-2">
