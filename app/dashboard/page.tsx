@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { useNotas } from "@/hooks/use-notas";
 import { NotaFiscalFormSimplificado } from "@/components/nota-fiscal-form-simplificado";
@@ -62,21 +63,40 @@ export default function DashboardPage() {
     });
   }, [session.isLoading, session.user, notasLoading, notas]);
 
-  // Se a sessão ainda estiver a carregar, podemos mostrar uma mensagem.
+  const primeiroNome = useMemo(
+    () => session.user?.name?.split(" ")[0] || "por aí",
+    [session.user]
+  );
+
   if (session.isLoading) {
-    return <div>A carregar...</div>;
+    return (
+      <div className="flex min-h-[50vh] flex-col items-center justify-center gap-3 text-muted-foreground">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        <p className="text-sm">Carregando seu painel…</p>
+      </div>
+    );
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Dashboard</h2>
+    <div className="flex flex-col gap-8">
+      {/* Cabeçalho persistente */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-sm font-medium text-primary">
+            {getSaudacao()}, {primeiroNome} 👋
+          </p>
+          <h1 className="mt-1 font-display text-3xl font-extrabold tracking-tight sm:text-4xl">
+            Seu painel MEI+
+          </h1>
+          <p className="mt-1.5 text-sm text-muted-foreground">
+            Acompanhe faturamento, emita notas e mantenha tudo em dia.
+          </p>
+        </div>
         <RelatorioAnualPdf />
       </div>
+
       <ResumoFaturamento />
       <GraficoFaturamento />
-
-
 
       {/* Sistema de Abas */}
       <Tabs
